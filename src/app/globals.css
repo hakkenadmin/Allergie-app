@@ -57,6 +57,7 @@ body {
   h2 {
     font-size: 1.25rem !important; /* 20px */
     line-height: 1.5rem !important;
+    margin-bottom: 5px;
   }
   
   h3 {
