@@ -41,9 +41,15 @@ export default function LoginPage() {
         if (error) throw error
         setMessage('ログインに成功しました。')
       } else {
-        const { error } = await supabase.auth.signUp({ email, password })
+        const { error } = await supabase.auth.signUp({ 
+          email, 
+          password,
+          options: {
+            emailRedirectTo: undefined
+          }
+        })
         if (error) throw error
-        setMessage('アカウントを作成しました。メールで確認（必要な場合）を行い、ログインしてください。')
+        setMessage('アカウントを作成しました。ログインしてください。')
       }
     } catch (err: any) {
       setError(err?.message || 'エラーが発生しました。')

@@ -98,7 +98,7 @@ export default function Home() {
                           onClick={() => setSelectedStore(store.store_name)}
                           className={`px-4 py-3 rounded-lg text-left transition-all ${
                             isSelected
-                              ? 'bg-logo-green text-white shadow-md'
+                              ? 'bg-logo-green text-white pushadow-md'
                               : 'bg-white text-gray-700 border border-gray-200 hover:border-logo-green hover:bg-green-50'
                           }`}
                         >
@@ -128,14 +128,14 @@ export default function Home() {
         <section className="py-12 sm:py-16 bg-gray-50">
           <div className="max-w-5xl mx-auto px-6 sm:px-12">
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8 text-center">
-              外食時のアレルギー確認が<br className="sm:hidden" />
-              大変な理由
+            読むのが難しい<br className="sm:hidden" />
+              アレルギー表とはおさらば
             </h2>
             <div className="grid sm:grid-cols-2 gap-6 sm:gap-8">
               <div className="bg-white rounded-lg p-6 shadow-sm">
                 <div className="text-3xl mb-4">🔍</div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  情報がバラバラ
+                  見づらいシート
                 </h3>
                 <p className="text-gray-700 text-sm sm:text-base">
                   各チェーンの公式サイトに散らばっていて、スマホで探しにくい
@@ -144,7 +144,7 @@ export default function Home() {
               <div className="bg-white rounded-lg p-6 shadow-sm">
                 <div className="text-3xl mb-4">📋</div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  形式が統一されていない
+                  毎回シートのデザインが違う
                 </h3>
                 <p className="text-gray-700 text-sm sm:text-base">
                   チェーンごとに書き方が違い、確認に時間がかかる
@@ -153,7 +153,7 @@ export default function Home() {
               <div className="bg-white rounded-lg p-6 shadow-sm">
                 <div className="text-3xl mb-4">⏰</div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  確認が面倒
+                  確認に数分もかかる!
                 </h3>
                 <p className="text-gray-700 text-sm sm:text-base">
                   外食前に何度もサイトを確認するのはストレスになる
@@ -162,7 +162,7 @@ export default function Home() {
               <div className="bg-white rounded-lg p-6 shadow-sm">
                 <div className="text-3xl mb-4">😰</div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  不安が残る
+                  本当に確認できているか不安
                 </h3>
                 <p className="text-gray-700 text-sm sm:text-base">
                   食物アレルギーを持つ人やその家族に、常に不安がつきまとう
@@ -211,7 +211,7 @@ export default function Home() {
                     ✓
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-1">迷わない判断</h3>
+                    <h3 className="font-semibold text-gray-900 mb-1">迷わないデザイン</h3>
                     <p className="text-gray-700 text-sm sm:text-base">
                       統一された見やすい表示で、判断に迷いません
                     </p>
@@ -231,7 +231,7 @@ export default function Home() {
             <div className="space-y-6">
               <div className="bg-white rounded-lg p-6 border-l-4 border-logo-orange shadow-sm">
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  🍽️ 外食前の確認
+                  🍽️ 行くレストランで本当に食べれる？
                 </h3>
                 <p className="text-gray-700">
                   レストランに行く前に、メニューに含まれるアレルゲンを事前にチェック
@@ -239,7 +239,7 @@ export default function Home() {
               </div>
               <div className="bg-white rounded-lg p-6 border-l-4 border-logo-green shadow-sm">
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  🏪 店選びのとき
+                  🏪 友人・同僚の店選びを後悔しない
                 </h3>
                 <p className="text-gray-700">
                   複数の候補店を比較して、安心して選べるお店を見つける
@@ -255,7 +255,7 @@ export default function Home() {
               </div>
               <div className="bg-white rounded-lg p-6 border-l-4 border-logo-orange shadow-sm">
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  👨‍👩‍👧‍👦 家族での利用
+                  👨‍👩‍👧‍👦 アレルギー持ちのお子さんも安心
                 </h3>
                 <p className="text-gray-700">
                   アレルギーを持つお子さんと一緒に、安心して外食を楽しむ

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useAllergies } from '@/hooks/useAllergies'
 import { getAllMenuItems, getAllStores, getStoreByName, getStoreById, matchMenuItems } from '@/lib/services/menuService'
 import type { MenuItem, MenuItemMatch } from '@/types/menu.types'
@@ -132,7 +133,12 @@ export default function MenuChecker({ storeId }: MenuCheckerProps = {}) {
         {/* Display user allergies */}
         {allergies.length > 0 && (
           <div className="mt-4">
-            <h4 className="text-sm font-semibold mb-2">あなたのアレルギー:</h4>
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-sm font-semibold">あなたのアレルギー:</h4>
+              <Link href="/setting" className="text-sm text-logo-orange underline hover:text-orange-600">
+                EDIT
+              </Link>
+            </div>
             <div className="flex flex-wrap gap-2">
               {getUserAllergyNames().map((name, idx) => (
                 <span key={idx} className="text-xs px-2 py-1 rounded bg-logo-green/20 text-logo-green">{name}</span>
