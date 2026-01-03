@@ -51,21 +51,19 @@ export default function Home() {
       <Header />
       <div className="flex-1 flex flex-col">
         {/* ファーストビュー */}
-        <section className="bg-gradient-to-br from-logo-green/10 via-white to-logo-orange/10 py-12 sm:py-16">
-          <div className="max-w-5xl mx-auto px-6 sm:px-12 text-center">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
-              チェーン店のアレルギー、<br className="sm:hidden" />
-              これ一つで。
-            </h1>
-            <p className="text-lg sm:text-xl text-gray-700 mb-6 sm:mb-8 max-w-2xl mx-auto">
-              複数チェーンのアレルギー情報を、<br className="sm:hidden" />
-              探さず・迷わず確認できるアプリ
-            </p>
-            <p className="text-base sm:text-lg text-gray-600 mb-8 sm:mb-10 max-w-xl mx-auto">
-              外食の不安を減らし、<br className="sm:hidden" />
-              安心して選べる選択肢を広げます
-            </p>
-          </div>
+        <section className="bg-gradient-to-br from-logo-green/50 via-white to-logo-orange/50 py-12 sm:py-16">
+          <div className="max-w-5xl mx-auto px-6 sm:px-12">
+              {/* メイン見出し - 中央揃え、大きく太字 */}
+              <h1 className="text-4xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-8 leading-tight">
+                アレルギー確認は、<br />
+                これ一つで完結。
+              </h1>
+              {/* サブ見出し - 左揃え、小さめ */}
+              <p className="text-sm sm:text-base md:text-lg text-gray-700 text-left max-w-2xl">
+                複数チェーンのアレルギー情報を、<br className="sm:hidden" />
+                探さず・迷わず確認できるアプリ
+              </p>
+            </div>
         </section>
 
         {/* 今すぐ試す（Start Now） */}

@@ -4,8 +4,8 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import FloatingFooter from '@/components/FloatingFooter'
 
 export const metadata: Metadata = {
-  title: 'アレルギー管理アプリ',
-  description: 'アレルギー情報と健康情報を管理',
+  title: 'アレチェック | アレルギー確認アプリ',
+  description: '有名店のアレルギーも問題なし！',
 }
 
 export default function RootLayout({

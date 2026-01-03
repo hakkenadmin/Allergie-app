@@ -50,8 +50,8 @@ body {
   
   /* Reduce heading sizes on mobile */
   h1 {
-    font-size: 1.5rem !important; /* 24px */
-    line-height: 1.75rem !important;
+    font-size: 1.8rem; /* 24px */
+    line-height: 1.0;
   }
   
   h2 {
