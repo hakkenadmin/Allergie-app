@@ -30,7 +30,7 @@ export default function MenuPage() {
     <main className="flex-1 flex flex-col bg-gray-50">
       <Header />
       <div className="flex-1 flex flex-col">
-        <div className="w-full max-w-4xl mx-auto px-4 sm:px-8 py-4 sm:py-8">
+        <div className="w-full sm:max-w-4xl sm:mx-auto px-4 sm:px-8 py-4 sm:py-8">
           <Suspense fallback={
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-logo-orange mx-auto mb-2"></div>
