@@ -32,16 +32,17 @@ export default function Home() {
       alert('アレルギーを選択してください')
       return
     }
-    if (!selectedStore) {
-      alert('お店を選択してください')
-      return
-    }
 
     // Find store ID from selected store name
-    const store = stores.find(s => s.store_name === selectedStore)
-    if (store) {
-      router.push(`/menu?storeid=${store.id}`)
+    if (selectedStore) {
+      const store = stores.find(s => s.store_name === selectedStore)
+      if (store) {
+        router.push(`/menu?storeid=${store.id}`)
+      } else {
+        router.push('/menu')
+      }
     } else {
+      // No store selected - go to menu page showing all stores
       router.push('/menu')
     }
   }
@@ -114,7 +115,7 @@ export default function Home() {
               <div className="text-center">
                 <button
                   onClick={handleCheck}
-                  disabled={allergies.length === 0 || !selectedStore}
+                  disabled={allergies.length === 0}
                   className="px-8 py-4 bg-logo-orange text-white rounded-full font-semibold text-lg shadow-lg hover:bg-orange-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
                   メニューをチェック
