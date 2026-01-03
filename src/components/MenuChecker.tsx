@@ -1,0 +1,217 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useAllergies } from '@/hooks/useAllergies'
+import { getAllMenuItems, getAllStores, getStoreByName, getStoreById, matchMenuItems } from '@/lib/services/menuService'
+import type { MenuItem, MenuItemMatch } from '@/types/menu.types'
+import type { Store } from '@/types/menu.types'
+import { COMMON_ALLERGIES } from '@/data/commonAllergies'
+
+interface MenuCheckerProps {
+  storeId?: number | null
+}
+
+export default function MenuChecker({ storeId }: MenuCheckerProps = {}) {
+  const { allergies } = useAllergies()
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([])
+  const [stores, setStores] = useState<Store[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selectedStore, setSelectedStore] = useState<string>('all')
+  const [selectedStoreInfo, setSelectedStoreInfo] = useState<Store | null>(null)
+  const [matches, setMatches] = useState<MenuItemMatch[]>([])
+
+  useEffect(() => {
+    loadData()
+  }, [])
+
+  // Auto-select store if storeId is provided
+  useEffect(() => {
+    const autoSelectStore = async () => {
+      if (storeId) {
+        // First try to find in already loaded stores
+        const store = stores.find(s => s.id === storeId)
+        if (store) {
+          setSelectedStore(store.store_name)
+        } else {
+          // If not found, fetch store by ID
+          const fetchedStore = await getStoreById(storeId)
+          if (fetchedStore) {
+            setSelectedStore(fetchedStore.store_name)
+          }
+        }
+      }
+    }
+    autoSelectStore()
+  }, [storeId, stores])
+
+  useEffect(() => {
+    if (selectedStore !== 'all') loadStore(selectedStore)
+    else setSelectedStoreInfo(null)
+  }, [selectedStore])
+
+  useEffect(() => {
+    if (menuItems.length > 0) {
+      const items = selectedStore === 'all' ? menuItems : menuItems.filter(m => m.store_name === selectedStore)
+      setMatches(matchMenuItems(items, allergies))
+    } else {
+      setMatches([])
+    }
+  }, [menuItems, allergies, selectedStore])
+
+  const loadData = async () => {
+    setLoading(true)
+    try {
+      const [items, storeList] = await Promise.all([getAllMenuItems(), getAllStores()])
+      setMenuItems(items)
+      setStores(storeList)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadStore = async (name: string) => {
+    const info = await getStoreByName(name)
+    setSelectedStoreInfo(info)
+  }
+
+  const storeNames = ['all', ...new Set(menuItems.map(i => i.store_name))]
+
+  // Helper to get allergy name from ID (Japanese first)
+  const getAllergyName = (allergyId: number) => {
+    const allergy = COMMON_ALLERGIES.find(a => a.id === allergyId)
+    return allergy ? `${allergy.ja} (${allergy.name})` : `不明 (${allergyId})`
+  }
+
+  // Helper to get user allergy names for display (Japanese first)
+  const getUserAllergyNames = () => {
+    return allergies.map(a => {
+      const allergy = COMMON_ALLERGIES.find(ca => ca.id === a.allergyId)
+      return allergy ? `${allergy.ja} (${allergy.name})` : `不明 (${a.allergyId})`
+    })
+  }
+
+  if (loading) {
+    return <div className="bg-white rounded-lg shadow-md p-6">メニュー項目を読み込み中...</div>
+  }
+
+  const filtered = selectedStore === 'all' ? menuItems : menuItems.filter(i => i.store_name === selectedStore)
+  const matchedIds = new Set(matches.map(m => m.menuItem.id))
+  const sorted = [...filtered].sort((a, b) => {
+    const aMatch = matchedIds.has(a.id) ? 0 : 1
+    const bMatch = matchedIds.has(b.id) ? 0 : 1
+    if (aMatch !== bMatch) return aMatch - bMatch
+    const storeCompare = (a.store_name || '').localeCompare(b.store_name || '')
+    if (storeCompare !== 0) return storeCompare
+    return (a.menu_name || '').localeCompare(b.menu_name || '')
+  })
+
+  return (
+    <div className="space-y-4 sm:space-y-6">
+      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+        <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">メニューアレルギーチェッカー</h3>
+        <div className="mb-3 sm:mb-4">
+          <label className="block text-sm font-medium mb-2">店舗でフィルター:</label>
+          <select value={selectedStore} onChange={e => setSelectedStore(e.target.value)} className="w-full p-2 border border-gray-300 rounded-md">
+            {storeNames.map(s => <option key={s} value={s}>{s === 'all' ? 'すべての店舗' : s}</option>)}
+          </select>
+        </div>
+
+        {selectedStoreInfo && (
+          <div className="p-4 bg-orange-50 border border-orange-200 rounded mb-4">
+            <h4 className="font-semibold">{selectedStoreInfo.store_name}</h4>
+            {selectedStoreInfo.description && <p className="text-sm text-gray-700">{selectedStoreInfo.description}</p>}
+            {selectedStoreInfo.managing_company && <p className="text-sm text-gray-600">運営会社: {selectedStoreInfo.managing_company}</p>}
+            {selectedStoreInfo.website && <a className="text-sm text-logo-blue" href={selectedStoreInfo.website} target="_blank" rel="noreferrer">ウェブサイトを訪問</a>}
+          </div>
+        )}
+
+        {allergies.length === 0 && <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-3 rounded">まずアレルギーを追加してください。</div>}
+        
+        {/* Display user allergies */}
+        {allergies.length > 0 && (
+          <div className="mt-4">
+            <h4 className="text-sm font-semibold mb-2">あなたのアレルギー:</h4>
+            <div className="flex flex-wrap gap-2">
+              {getUserAllergyNames().map((name, idx) => (
+                <span key={idx} className="text-xs px-2 py-1 rounded bg-logo-green/20 text-logo-green">{name}</span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+        <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">メニュー項目 ({filtered.length})</h3>
+        {filtered.length === 0 ? <p className="text-gray-500">メニュー項目が見つかりませんでした。</p> : (
+          <div className="space-y-4">
+            {sorted.map(item => {
+              const match = matches.find(m => m.menuItem.id === item.id)
+              const has = !!match
+              return (
+                <div key={item.id} className={`border-2 rounded-lg p-4 ${has ? 'border-red-200 bg-red-50/30' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="flex justify-between items-start">
+                    {/* Left side: Menu name, description, and match info */}
+                    <div className="flex-1">
+                      <h4 className="font-bold text-lg text-gray-900 mb-1">{item.menu_name}</h4>
+                      {item.description && <p className="text-sm text-gray-700 mb-2">{item.description}</p>}
+                      {has && match && (
+                        <div className="mt-2 px-3 py-1 bg-pink-50 rounded-md inline-block">
+                          <p className="text-sm font-medium text-red-500">
+                            一致: {match.matchedAllergyIds.map(id => {
+                              const allergy = COMMON_ALLERGIES.find(a => a.id === id)
+                              return allergy ? `${allergy.ja} (${allergy.name})` : `不明 (${id})`
+                            }).join(', ')}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Right side: Allergy items */}
+                    <div className="flex flex-col items-start ml-4">
+                      <div>
+                        <div className="flex gap-2">
+                          {item.allergies && item.allergies.length > 0 ? (
+                            item.allergies.map((allergyId, idx) => {
+                              const allergy = COMMON_ALLERGIES.find(a => a.id === allergyId)
+                              const isMatched = match?.matchedAllergyIds.includes(allergyId) || false
+                              return (
+                                <div
+                                  key={idx}
+                                  className={`w-10 h-10 rounded-md flex items-center justify-center ${
+                                    isMatched ? 'bg-red-50 border-2 border-red-200' : 'bg-gray-100 border border-gray-300'
+                                  }`}
+                                >
+                                  {allergy?.image ? (
+                                    <img
+                                      src={allergy.image}
+                                      alt={allergy.ja}
+                                      className="w-full h-full object-contain rounded-md"
+                                    />
+                                  ) : (
+                                    <span className="text-xs text-gray-500">png</span>
+                                  )}
+                                </div>
+                              )
+                            })
+                          ) : (
+                            <div className="w-10 h-10 rounded-md bg-green-100 border border-green-300 flex items-center justify-center">
+                              <span className="text-xs text-green-600">✓</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+
