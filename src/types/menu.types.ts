@@ -6,6 +6,7 @@ export interface Store {
   address?: string
   phone?: string
   website?: string
+  verified?: 'y' | 'n'
   created_at: string
   updated_at: string
 }

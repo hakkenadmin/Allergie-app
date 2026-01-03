@@ -117,7 +117,7 @@ export default function MenuChecker({ storeId }: MenuCheckerProps = {}) {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <div className="bg-white rounded shadow-md p-4 sm:p-6 mb-8 sm:mb-15">
+      <div className="bg-white rounded shadow-md p-4 sm:p-6 mb-8 sm:mb-15p">
         <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">メニューアレルギーチェッカー</h3>
         <div className="mb-3 sm:mb-4">
           <label className="block text-sm font-medium mb-2">店舗でフィルター:</label>
@@ -128,7 +128,14 @@ export default function MenuChecker({ storeId }: MenuCheckerProps = {}) {
 
         {selectedStoreInfo && (
           <div className="p-4 bg-orange-50 border border-orange-200 rounded-none sm:rounded mb-4">
-            <h4 className="font-semibold">{selectedStoreInfo.store_name}</h4>
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-semibold">{selectedStoreInfo.store_name}</h4>
+              {selectedStoreInfo.verified === 'y' && (
+                <span className="px-2 py-1 text-xs font-semibold bg-logo-green text-white rounded">
+                  認証済み
+                </span>
+              )}
+            </div>
             {selectedStoreInfo.description && <p className="text-sm text-gray-700">{selectedStoreInfo.description}</p>}
             {selectedStoreInfo.managing_company && <p className="text-sm text-gray-600">運営会社: {selectedStoreInfo.managing_company}</p>}
             {selectedStoreInfo.website && <a className="text-sm text-logo-blue" href={selectedStoreInfo.website} target="_blank" rel="noreferrer">ウェブサイトを訪問</a>}

@@ -55,6 +55,7 @@ CREATE TABLE IF NOT EXISTS stores (
   address TEXT,
   phone TEXT,
   website TEXT,
+  verified TEXT DEFAULT 'n' CHECK (verified IN ('y', 'n')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -114,11 +115,18 @@ CREATE TRIGGER update_menu_items_updated_at
     EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================
+-- Migration: Add verified column to stores table
+-- Run this if you already have a stores table
+-- ============================================
+-- ALTER TABLE stores ADD COLUMN IF NOT EXISTS verified TEXT DEFAULT 'n' CHECK (verified IN ('y', 'n'));
+
+-- ============================================
 -- Notes:
 -- - user_allergies: stores only allergy_id (INT) referencing COMMON_ALLERGIES.id from code.
 --   All allergies must be declared in COMMON_ALLERGIES - no custom allergies allowed.
 -- - menu_items.allergies: DECIMAL[] array storing allergy IDs from COMMON_ALLERGIES.
 -- - stores/menu_items: public read, authenticated insert (adjust as needed).
+-- - stores.verified: 'y' or 'n' to indicate if store information is verified.
 -- - RLS is enabled on all tables.
 -- - updated_at triggers keep timestamps fresh on update.
 -- ============================================
