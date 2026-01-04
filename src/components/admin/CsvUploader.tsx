@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import type { Store } from '@/types/menu.types'
 
@@ -8,6 +8,7 @@ interface CsvUploaderProps {
   store: Store
   onClose: () => void
   onUploadComplete: () => void
+  initialCsvData?: string // Optional: CSV string to pre-populate
 }
 
 interface CsvRow {
@@ -24,7 +25,7 @@ interface ColumnMapping {
   is_published?: string
 }
 
-export default function CsvUploader({ store, onClose, onUploadComplete }: CsvUploaderProps) {
+export default function CsvUploader({ store, onClose, onUploadComplete, initialCsvData }: CsvUploaderProps) {
   const [csvData, setCsvData] = useState<CsvRow[]>([])
   const [csvHeaders, setCsvHeaders] = useState<string[]>([])
   const [columnMapping, setColumnMapping] = useState<ColumnMapping>({})
@@ -32,6 +33,13 @@ export default function CsvUploader({ store, onClose, onUploadComplete }: CsvUpl
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [uploadErrors, setUploadErrors] = useState<string[]>([])
+
+  // Handle initial CSV data
+  useEffect(() => {
+    if (initialCsvData) {
+      parseCsv(initialCsvData)
+    }
+  }, [initialCsvData])
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -420,4 +428,5 @@ export default function CsvUploader({ store, onClose, onUploadComplete }: CsvUpl
     </div>
   )
 }
+
 

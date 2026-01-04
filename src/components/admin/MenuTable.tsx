@@ -4,16 +4,17 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { getMenuItemsByStore } from '@/lib/services/menuService'
 import type { Store, MenuItem } from '@/types/menu.types'
-import { COMMON_ALLERGIES } from '@/data/commonAllergies'
+import { COMMON_ALLERGIES, type CommonAllergy } from '@/data/commonAllergies'
 
 interface MenuTableProps {
   store: Store
   onClose: () => void
   refreshKey?: number
   onCsvUpload?: () => void
+  onPdfUpload?: () => void
 }
 
-export default function MenuTable({ store, onClose, refreshKey, onCsvUpload }: MenuTableProps) {
+export default function MenuTable({ store, onClose, refreshKey, onCsvUpload, onPdfUpload }: MenuTableProps) {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [menuLoading, setMenuLoading] = useState(true)
   const [editingMenuField, setEditingMenuField] = useState<{ itemId: number; field: string } | null>(null)
@@ -258,7 +259,7 @@ export default function MenuTable({ store, onClose, refreshKey, onCsvUpload }: M
 
   const getAllergyNames = (allergyIds: number[]): string => {
     return allergyIds.map(id => {
-      const allergy = COMMON_ALLERGIES.find(a => a.id === id)
+      const allergy = COMMON_ALLERGIES.find((a: CommonAllergy) => a.id === id)
       return allergy ? allergy.ja : `不明 (${id})`
     }).join(', ')
   }
@@ -271,6 +272,14 @@ export default function MenuTable({ store, onClose, refreshKey, onCsvUpload }: M
         </h2>
         <div className="flex items-center gap-3">
           <p className="text-xs text-gray-500">クリックすると編集できます</p>
+          {onPdfUpload && (
+            <button
+              onClick={onPdfUpload}
+              className="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
+            >
+              PDFから変換
+            </button>
+          )}
           {onCsvUpload && (
             <button
               onClick={onCsvUpload}
@@ -503,7 +512,7 @@ export default function MenuTable({ store, onClose, refreshKey, onCsvUpload }: M
                           <div className="flex flex-wrap gap-2">
                             {tempAllergies.length > 0 ? (
                               tempAllergies.map((allergyId) => {
-                                const allergy = COMMON_ALLERGIES.find(a => a.id === allergyId)
+                                const allergy = COMMON_ALLERGIES.find((a: CommonAllergy) => a.id === allergyId)
                                 return (
                                   <span
                                     key={allergyId}
@@ -536,8 +545,8 @@ export default function MenuTable({ store, onClose, refreshKey, onCsvUpload }: M
                             >
                               <option value="">新しいアレルギーを追加</option>
                               {COMMON_ALLERGIES.filter(
-                                allergy => !tempAllergies.includes(allergy.id)
-                              ).map((allergy) => (
+                                (allergy: CommonAllergy) => !tempAllergies.includes(allergy.id)
+                              ).map((allergy: CommonAllergy) => (
                                 <option key={allergy.id} value={allergy.id}>
                                   {allergy.ja}
                                 </option>
@@ -568,7 +577,7 @@ export default function MenuTable({ store, onClose, refreshKey, onCsvUpload }: M
                           {item.allergies && item.allergies.length > 0 ? (
                             <div className="flex flex-wrap gap-1 max-h-[48px] overflow-hidden">
                               {item.allergies.map((allergyId) => {
-                                const allergy = COMMON_ALLERGIES.find(a => a.id === allergyId)
+                                const allergy = COMMON_ALLERGIES.find((a: CommonAllergy) => a.id === allergyId)
                                 return (
                                   <span
                                     key={allergyId}

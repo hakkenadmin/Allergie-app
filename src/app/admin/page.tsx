@@ -10,6 +10,7 @@ import { userRoleService } from '@/lib/services/userRoleService'
 import { supabase } from '@/lib/supabase/client'
 import MenuTable from '@/components/admin/MenuTable'
 import CsvUploader from '@/components/admin/CsvUploader'
+import PdfToCsvUploader from '@/components/admin/PdfToCsvUploader'
 import type { Store } from '@/types/menu.types'
 
 export default function AdminPage() {
@@ -17,13 +18,25 @@ export default function AdminPage() {
   const { user, loading: authLoading } = useAuth()
   const [stores, setStores] = useState<Store[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [checkingAdmin, setCheckingAdmin] = useState(true)
   const [selectedStore, setSelectedStore] = useState<Store | null>(null)
   const [editingStore, setEditingStore] = useState<Store | null>(null)
+  const [creatingStore, setCreatingStore] = useState(false)
+  const [newStore, setNewStore] = useState<Partial<Store>>({
+    store_name: '',
+    description: '',
+    managing_company: '',
+    address: '',
+    phone: '',
+    website: '',
+    verified: 'n',
+  })
   const [users, setUsers] = useState<Array<{ id: string; email: string }>>([])
   const [selectedUserId, setSelectedUserId] = useState<string>('')
   const [loadingUsers, setLoadingUsers] = useState(false)
   const [showCsvUploader, setShowCsvUploader] = useState(false)
+  const [showPdfUploader, setShowPdfUploader] = useState(false)
   const [csvUploadStore, setCsvUploadStore] = useState<Store | null>(null)
   const [menuTableRefreshKey, setMenuTableRefreshKey] = useState(0)
 
@@ -48,22 +61,34 @@ export default function AdminPage() {
 
       // User is admin, allow access
       setCheckingAdmin(false)
-      loadStores()
+      loadStores(true) // Show loading on initial load
     }
 
     checkAdminAccess()
   }, [user, authLoading, router])
 
-  const loadStores = async () => {
-    setLoading(true)
+  const loadStores = async (showLoading = false) => {
+    if (showLoading) {
+      setLoading(true)
+    } else {
+      setRefreshing(true)
+    }
     try {
       const storeList = await getAllStores()
       setStores(storeList)
     } catch (err) {
       console.error('Error loading stores:', err)
     } finally {
-      setLoading(false)
+      if (showLoading) {
+        setLoading(false)
+      } else {
+        setRefreshing(false)
+      }
     }
+  }
+
+  const handleRefreshStores = async () => {
+    await loadStores(false)
   }
 
   const handleViewMenu = (store: Store) => {
@@ -95,7 +120,7 @@ export default function AdminPage() {
         throw error
       }
 
-      await loadStores()
+      await loadStores(false)
       setEditingStore(null)
     } catch (err: any) {
       console.error('Error updating store:', err)
@@ -107,9 +132,75 @@ export default function AdminPage() {
     setEditingStore(null)
   }
 
+  const handleCreateNewStore = () => {
+    setCreatingStore(true)
+    setNewStore({
+      store_name: '',
+      description: '',
+      managing_company: '',
+      address: '',
+      phone: '',
+      website: '',
+      verified: 'n',
+    })
+  }
+
+  const handleCancelCreateStore = () => {
+    setCreatingStore(false)
+    setNewStore({
+      store_name: '',
+      description: '',
+      managing_company: '',
+      address: '',
+      phone: '',
+      website: '',
+      verified: 'n',
+    })
+  }
+
+  const handleSaveNewStore = async () => {
+    if (!newStore.store_name || newStore.store_name.trim() === '') {
+      alert('店舗名を入力してください')
+      return
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('stores')
+        .insert({
+          store_name: newStore.store_name,
+          description: newStore.description || null,
+          managing_company: newStore.managing_company || null,
+          address: newStore.address || null,
+          phone: newStore.phone || null,
+          website: newStore.website || null,
+          verified: newStore.verified || 'n',
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Supabase insert error:', error)
+        throw error
+      }
+
+      await loadStores(false)
+      setCreatingStore(false)
+      
+      // Automatically show CSV uploader for the new store
+      if (data) {
+        setCsvUploadStore(data as Store)
+        setShowCsvUploader(true)
+      }
+    } catch (err: any) {
+      console.error('Error creating store:', err)
+      alert(`店舗の作成に失敗しました: ${err?.message || 'Unknown error'}`)
+    }
+  }
+
   const handleCsvUploadComplete = async () => {
     // Reload stores to refresh data
-    await loadStores()
+    await loadStores(false)
     // Force MenuTable to refresh by updating refreshKey
     setMenuTableRefreshKey(prev => prev + 1)
   }
@@ -280,8 +371,35 @@ export default function AdminPage() {
 
               {/* Stores Table */}
               <div className="bg-white rounded-lg shadow-md overflow-hidden">
-                <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+                <div className="px-4 sm:px-6 py-4 border-b border-gray-200 flex items-center justify-between">
                   <h2 className="text-lg font-semibold text-gray-900">店舗一覧</h2>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleRefreshStores}
+                      disabled={refreshing}
+                      className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      {refreshing ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                          <span>更新中...</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          <span>最新版を読み込む</span>
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={handleCreateNewStore}
+                      className="px-4 py-2 bg-logo-green text-white rounded hover:bg-green-600 transition-colors"
+                    >
+                      新規登録
+                    </button>
+                  </div>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
@@ -302,6 +420,9 @@ export default function AdminPage() {
                         <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           認証済み
                         </th>
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          更新日時
+                        </th>
                         <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                           操作
                         </th>
@@ -310,7 +431,7 @@ export default function AdminPage() {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {stores.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="px-4 sm:px-6 py-4 text-center text-sm text-gray-500">
+                          <td colSpan={7} className="px-4 sm:px-6 py-4 text-center text-sm text-gray-500">
                             店舗が登録されていません
                           </td>
                         </tr>
@@ -340,6 +461,17 @@ export default function AdminPage() {
                                 </span>
                               )}
                             </td>
+                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {store.updated_at
+                                ? new Date(store.updated_at).toLocaleString('ja-JP', {
+                                    year: 'numeric',
+                                    month: '2-digit',
+                                    day: '2-digit',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })
+                                : '-'}
+                            </td>
                             <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                               <div className="flex gap-2 justify-end">
                                 <button
@@ -363,6 +495,100 @@ export default function AdminPage() {
                   </table>
                 </div>
               </div>
+
+              {/* Create New Store Screen */}
+              {creatingStore && (
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">新規店舗登録</h2>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">店舗名 <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        value={newStore.store_name || ''}
+                        onChange={(e) => setNewStore({ ...newStore, store_name: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        placeholder="店舗名を入力"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">説明</label>
+                      <textarea
+                        value={newStore.description || ''}
+                        onChange={(e) => setNewStore({ ...newStore, description: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        rows={3}
+                        placeholder="説明を入力"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">運営会社</label>
+                      <input
+                        type="text"
+                        value={newStore.managing_company || ''}
+                        onChange={(e) => setNewStore({ ...newStore, managing_company: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        placeholder="運営会社を入力"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">住所</label>
+                      <input
+                        type="text"
+                        value={newStore.address || ''}
+                        onChange={(e) => setNewStore({ ...newStore, address: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        placeholder="住所を入力"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">電話番号</label>
+                      <input
+                        type="text"
+                        value={newStore.phone || ''}
+                        onChange={(e) => setNewStore({ ...newStore, phone: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        placeholder="電話番号を入力"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">ウェブサイト</label>
+                      <input
+                        type="text"
+                        value={newStore.website || ''}
+                        onChange={(e) => setNewStore({ ...newStore, website: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        placeholder="ウェブサイトURLを入力"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">認証済み</label>
+                      <select
+                        value={newStore.verified || 'n'}
+                        onChange={(e) => setNewStore({ ...newStore, verified: e.target.value as 'y' | 'n' })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      >
+                        <option value="n">未認証</option>
+                        <option value="y">認証済み</option>
+                      </select>
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        onClick={handleCancelCreateStore}
+                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
+                      >
+                        キャンセル
+                      </button>
+                      <button
+                        onClick={handleSaveNewStore}
+                        className="px-4 py-2 bg-logo-green text-white rounded hover:bg-green-600 transition-colors"
+                      >
+                        保存
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Store Edit Screen */}
               {editingStore && (
@@ -462,6 +688,10 @@ export default function AdminPage() {
                     setCsvUploadStore(selectedStore)
                     setShowCsvUploader(true)
                   }}
+                  onPdfUpload={() => {
+                    setCsvUploadStore(selectedStore)
+                    setShowPdfUploader(true)
+                  }}
                 />
               )}
             </div>
@@ -478,6 +708,22 @@ export default function AdminPage() {
               store={csvUploadStore}
               onClose={() => {
                 setShowCsvUploader(false)
+                setCsvUploadStore(null)
+              }}
+              onUploadComplete={handleCsvUploadComplete}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* PDF Uploader Modal */}
+      {showPdfUploader && csvUploadStore && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <PdfToCsvUploader
+              store={csvUploadStore}
+              onClose={() => {
+                setShowPdfUploader(false)
                 setCsvUploadStore(null)
               }}
               onUploadComplete={handleCsvUploadComplete}

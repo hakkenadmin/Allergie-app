@@ -38,10 +38,15 @@ A freemium web application for managing allergies, built with Next.js, Supabase,
      ```env
      NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
      NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_publishable_key
+     OPENAI_API_KEY=your_openai_api_key
      ```
    - You can find these in your Supabase project settings under API:
      - **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
      - **Publishable key** (anon/public key) → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - For OpenAI API key (required for PDF to CSV conversion):
+     - Go to [OpenAI API Keys](https://platform.openai.com/api-keys)
+     - Create a new API key
+     - Add it as `OPENAI_API_KEY` in your `.env.local` file
 
 4. **Run the development server**
    ```bash
