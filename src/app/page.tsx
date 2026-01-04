@@ -116,7 +116,8 @@ export default function Home() {
                 <button
                   onClick={handleCheck}
                   disabled={allergies.length === 0}
-                  className="px-8 py-4 bg-logo-orange text-white rounded-full font-semibold text-lg shadow-lg hover:bg-orange-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  className="px-8 py-4 bg-logo-orange text-white rounded-full font-semibold text-lg shadow-lg hover:bg-orange-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed dark:bg-logo-orange dark:text-white"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   メニューをチェック
                 </button>
@@ -380,7 +381,8 @@ export default function Home() {
             <div className="text-center">
               <Link
                 href="/log-in"
-                className="inline-flex items-center justify-center px-8 py-4 bg-logo-orange text-white rounded-full font-semibold text-lg shadow-lg hover:bg-orange-600 transition-colors"
+                className="inline-flex items-center justify-center px-8 py-4 bg-logo-orange text-white rounded-full font-semibold text-lg shadow-lg hover:bg-orange-600 transition-colors dark:bg-logo-orange dark:text-white"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 今すぐサインアップ
               </Link>
@@ -413,7 +415,8 @@ export default function Home() {
               </Link>
               <Link
                 href="/menu"
-                className="inline-flex items-center justify-center px-8 py-4 bg-logo-orange text-white rounded-full font-semibold text-lg shadow-lg hover:bg-orange-600 transition-colors"
+                className="inline-flex items-center justify-center px-8 py-4 bg-logo-orange text-white rounded-full font-semibold text-lg shadow-lg hover:bg-orange-600 transition-colors dark:bg-logo-orange dark:text-white"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 メニューをチェック
               </Link>

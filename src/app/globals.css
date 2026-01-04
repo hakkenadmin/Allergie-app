@@ -92,3 +92,17 @@ body {
   }
 }
 
+/* Fix for iOS Safari dark mode button issues */
+@media (prefers-color-scheme: dark) {
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  button[class*="bg-logo-orange"],
+  a[class*="bg-logo-orange"] {
+    background-color: #F97316 !important;
+    color: white !important;
+  }
+}
+

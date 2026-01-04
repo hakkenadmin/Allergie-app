@@ -20,6 +20,8 @@ export interface MenuItem {
   allergies: number[]  // Array of allergy IDs from COMMON_ALLERGIES
   price?: number
   category?: string
+  is_published?: boolean
+  note?: string | null
   created_at: string
   updated_at: string
 }
