@@ -11,6 +11,7 @@ import { supabase } from '@/lib/supabase/client'
 import MenuTable from '@/components/admin/MenuTable'
 import CsvUploader from '@/components/admin/CsvUploader'
 import PdfToCsvUploader from '@/components/admin/PdfToCsvUploader'
+import StoreCsvUploader from '@/components/admin/StoreCsvUploader'
 import type { Store } from '@/types/menu.types'
 
 export default function AdminPage() {
@@ -37,7 +38,10 @@ export default function AdminPage() {
   const [loadingUsers, setLoadingUsers] = useState(false)
   const [showCsvUploader, setShowCsvUploader] = useState(false)
   const [showPdfUploader, setShowPdfUploader] = useState(false)
+  const [showStoreCsvUploader, setShowStoreCsvUploader] = useState(false)
   const [csvUploadStore, setCsvUploadStore] = useState<Store | null>(null)
+  const [showStoreSelector, setShowStoreSelector] = useState(false)
+  const [uploadType, setUploadType] = useState<'csv' | 'pdf' | null>(null)
   const [menuTableRefreshKey, setMenuTableRefreshKey] = useState(0)
 
   // Check if user is admin
@@ -203,6 +207,54 @@ export default function AdminPage() {
     await loadStores(false)
     // Force MenuTable to refresh by updating refreshKey
     setMenuTableRefreshKey(prev => prev + 1)
+  }
+
+  const handleOpenStoreCsvUploader = () => {
+    setShowStoreCsvUploader(true)
+  }
+
+  const handleOpenCsvUploader = () => {
+    if (stores.length === 0) {
+      alert('店舗が登録されていません。まず店舗を登録してください。')
+      return
+    }
+    if (stores.length === 1) {
+      // If only one store, use it directly
+      setCsvUploadStore(stores[0])
+      setShowCsvUploader(true)
+    } else {
+      // If multiple stores, show selector
+      setUploadType('csv')
+      setShowStoreSelector(true)
+    }
+  }
+
+  const handleOpenPdfUploader = () => {
+    if (stores.length === 0) {
+      alert('店舗が登録されていません。まず店舗を登録してください。')
+      return
+    }
+    if (stores.length === 1) {
+      // If only one store, use it directly
+      setCsvUploadStore(stores[0])
+      setShowPdfUploader(true)
+    } else {
+      // If multiple stores, show selector
+      setUploadType('pdf')
+      setShowStoreSelector(true)
+    }
+  }
+
+  const handleSelectStoreForUpload = (store: Store) => {
+    setCsvUploadStore(store)
+    setShowStoreSelector(false)
+    // Determine upload type
+    if (uploadType === 'csv') {
+      setShowCsvUploader(true)
+    } else if (uploadType === 'pdf') {
+      setShowPdfUploader(true)
+    }
+    setUploadType(null)
   }
 
   const loadUsers = async () => {
@@ -392,6 +444,15 @@ export default function AdminPage() {
                           <span>最新版を読み込む</span>
                         </>
                       )}
+                    </button>
+                    <button
+                      onClick={handleOpenStoreCsvUploader}
+                      className="px-3 py-1.5 text-sm bg-logo-blue text-white rounded hover:bg-blue-600 transition-colors flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <span>店舗CSVアップロード</span>
                     </button>
                     <button
                       onClick={handleCreateNewStore}
@@ -700,6 +761,43 @@ export default function AdminPage() {
         <Footer />
       </div>
 
+      {/* Store Selector Modal */}
+      {showStoreSelector && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">店舗を選択</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              メニューをアップロードする店舗を選択してください
+            </p>
+            <div className="space-y-2 max-h-64 overflow-y-auto mb-4">
+              {stores.map((store) => (
+                <button
+                  key={store.id}
+                  onClick={() => handleSelectStoreForUpload(store)}
+                  className="w-full text-left px-4 py-3 border border-gray-200 rounded hover:bg-gray-50 hover:border-logo-orange transition-colors"
+                >
+                  <div className="font-medium text-gray-900">{store.store_name}</div>
+                  {store.description && (
+                    <div className="text-sm text-gray-500 mt-1 truncate">{store.description}</div>
+                  )}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => {
+                  setShowStoreSelector(false)
+                  setUploadType(null)
+                }}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
+              >
+                キャンセル
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* CSV Uploader Modal */}
       {showCsvUploader && csvUploadStore && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -727,6 +825,23 @@ export default function AdminPage() {
                 setCsvUploadStore(null)
               }}
               onUploadComplete={handleCsvUploadComplete}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Store CSV Uploader Modal */}
+      {showStoreCsvUploader && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <StoreCsvUploader
+              onClose={() => {
+                setShowStoreCsvUploader(false)
+              }}
+              onUploadComplete={async () => {
+                await loadStores(false)
+                setShowStoreCsvUploader(false)
+              }}
             />
           </div>
         </div>

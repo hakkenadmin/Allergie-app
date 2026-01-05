@@ -51,56 +51,62 @@ export default function Home() {
     <main className="flex-1 flex flex-col bg-gray-50">
       <Header />
       <div className="flex-1 flex flex-col">
-        {/* ファーストビュー */}
-        <section className="bg-gradient-to-br from-logo-green/50 via-white to-logo-orange/50 py-12 sm:py-16">
-          <div className="max-w-5xl mx-auto px-6 sm:px-12">
-              {/* メイン見出し - 中央揃え、大きく太字 */}
-              <h1 className="text-4xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-8 leading-tight">
-                アレルギー確認は、<br />
-                これ一つで完結。
-              </h1>
-              {/* サブ見出し - 左揃え、小さめ */}
-              <p className="text-sm sm:text-base md:text-lg text-gray-700 text-left max-w-2xl">
-                複数チェーンのアレルギー情報を、<br className="sm:hidden" />
-                探さず・迷わず確認できるアプリ
-              </p>
-            </div>
+        {/* Hero Section */}
+        <section className="bg-gradient-to-br from-logo-green/50 via-white to-logo-orange/50 py-16 sm:py-20">
+          <div className="max-w-2xl mx-auto px-6 text-center">
+            {/* Main Headline */}
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-8 leading-tight">
+              アレルギー確認は、<br />
+              これ一つで完結。
+            </h1>
+            
+            {/* CTA Button */}
+            <Link
+              href="#start-now"
+              className="inline-block px-8 py-4 bg-logo-green text-white rounded-full font-semibold text-lg shadow-lg hover:bg-green-600 transition-colors"
+            >
+              今すぐ試す
+            </Link>
+          </div>
         </section>
 
-        {/* 今すぐ試す（Start Now） */}
-        <section id="start-now" className="py-12 sm:py-16 bg-white">
-          <div className="max-w-5xl mx-auto px-6 sm:px-12">
+        {/* Quick Start CTA */}
+        <section id="start-now" className="py-12 sm:py-16 bg-gray-50">
+          <div className="max-w-2xl mx-auto px-6">
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-8 text-center">
               今すぐ試す
             </h2>
             
-            <div className="bg-gradient-to-br from-logo-green/5 to-logo-orange/5 rounded-xl p-6 sm:p-8 shadow-lg">
-              {/* アレルギー選択 - AllergySelectorコンポーネントを使用 */}
+            <div className="bg-white rounded-xl p-6 sm:p-8 shadow-lg">
+              {/* Step 1: Allergy Selection */}
               <div className="mb-8">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">
+                  あなたのアレルギーを選択
+                </h3>
                 <AllergySelector />
               </div>
 
-              {/* お店選択 */}
+              {/* Step 2: Store Selection */}
               <div className="mb-8">
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">
-                  🏪 知りたいお店は？
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">
+                  お店を選ぶ
                 </h3>
                 {storesLoading ? (
-                  <p className="text-gray-500">お店を読み込み中...</p>
+                  <p className="text-gray-500 text-center">お店を読み込み中...</p>
                 ) : stores.length === 0 ? (
-                  <p className="text-gray-500">お店が登録されていません</p>
+                  <p className="text-gray-500 text-center">お店が登録されていません</p>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {stores.map((store) => {
                       const isSelected = selectedStore === store.store_name
                       return (
                         <button
                           key={store.id}
                           onClick={() => setSelectedStore(store.store_name)}
-                          className={`px-4 py-3 rounded-lg text-left transition-all ${
+                          className={`px-4 py-3 rounded-lg text-center transition-all ${
                             isSelected
-                              ? 'bg-logo-green text-white pushadow-md'
-                              : 'bg-white text-gray-700 border border-gray-200 hover:border-logo-green hover:bg-green-50'
+                              ? 'bg-logo-green text-white shadow-md'
+                              : 'bg-gray-50 text-gray-700 border-2 border-gray-200 hover:border-logo-green hover:bg-green-50'
                           }`}
                         >
                           <span className="font-medium">{store.store_name}</span>
@@ -111,12 +117,12 @@ export default function Home() {
                 )}
               </div>
 
-              {/* チェックボタン */}
+              {/* Check Button */}
               <div className="text-center">
                 <button
                   onClick={handleCheck}
                   disabled={allergies.length === 0}
-                  className="px-8 py-4 bg-logo-orange text-white rounded-full font-semibold text-lg shadow-lg hover:bg-orange-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed dark:bg-logo-orange dark:text-white"
+                  className="w-full sm:w-auto px-8 py-4 bg-logo-orange text-white rounded-full font-semibold text-lg shadow-lg hover:bg-orange-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   メニューをチェック
@@ -126,97 +132,54 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 課題提起 */}
-        <section className="py-12 sm:py-16 bg-gray-50">
-          <div className="max-w-5xl mx-auto px-6 sm:px-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8 text-center">
-            読むのが難しい<br className="sm:hidden" />
-              アレルギー表とはおさらば
-            </h2>
-            <div className="grid sm:grid-cols-2 gap-6 sm:gap-8">
-              <div className="bg-white rounded-lg p-6 shadow-sm">
-                <div className="text-3xl mb-4">🔍</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  見づらいシート
-                </h3>
-                <p className="text-gray-700 text-sm sm:text-base">
-                  各チェーンの公式サイトに散らばっていて、スマホで探しにくい
-                </p>
-              </div>
-              <div className="bg-white rounded-lg p-6 shadow-sm">
-                <div className="text-3xl mb-4">📋</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  毎回シートのデザインが違う
-                </h3>
-                <p className="text-gray-700 text-sm sm:text-base">
-                  チェーンごとに書き方が違い、確認に時間がかかる
-                </p>
-              </div>
-              <div className="bg-white rounded-lg p-6 shadow-sm">
-                <div className="text-3xl mb-4">⏰</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  確認に数分もかかる!
-                </h3>
-                <p className="text-gray-700 text-sm sm:text-base">
-                  外食前に何度もサイトを確認するのはストレスになる
-                </p>
-              </div>
-              <div className="bg-white rounded-lg p-6 shadow-sm">
-                <div className="text-3xl mb-4">😰</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  本当に確認できているか不安
-                </h3>
-                <p className="text-gray-700 text-sm sm:text-base">
-                  食物アレルギーを持つ人やその家族に、常に不安がつきまとう
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* アレチェックとは */}
+        {/* Before/After Contrast */}
         <section className="py-12 sm:py-16 bg-white">
-          <div className="max-w-5xl mx-auto px-6 sm:px-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8 text-center">
-              アレチェックとは
+          <div className="max-w-4xl mx-auto px-6">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-8 text-center">
+              こんな不安、ありませんか？
             </h2>
-            <div className="bg-gradient-to-br from-logo-green/5 to-logo-orange/5 rounded-lg shadow-lg p-6 sm:p-8 mb-8">
-              <p className="text-lg sm:text-xl text-gray-800 mb-6 leading-relaxed">
-                アレチェックは、複数のチェーン店のアレルギー情報を<br className="hidden sm:block" />
-                一つのアプリで確認できるサービスです。
-              </p>
-              <div className="space-y-4">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 bg-logo-green rounded-full flex items-center justify-center text-white font-bold">
-                    ✓
+            
+            <div className="grid sm:grid-cols-2 gap-6 mb-12">
+              {/* Before */}
+              <div className="bg-gray-100 rounded-lg p-6 sm:p-8">
+                <div className="text-center mb-4">
+                  <div className="text-4xl mb-2">😰</div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-4">Before</h3>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <span className="text-gray-600">・</span>
+                    <p className="text-gray-700">PDFを探すのに時間がかかる</p>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-1">複数チェーンの情報を集約</h3>
-                    <p className="text-gray-700 text-sm sm:text-base">
-                      各チェーンのアレルギー情報を集めて、わかりやすく整理しています
-                    </p>
+                  <div className="flex items-start gap-3">
+                    <span className="text-gray-600">・</span>
+                    <p className="text-gray-700">表が読みにくい</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="text-gray-600">・</span>
+                    <p className="text-gray-700">本当に大丈夫か不安</p>
                   </div>
                 </div>
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 bg-logo-green rounded-full flex items-center justify-center text-white font-bold">
-                    ✓
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-1">すぐに確認できる</h3>
-                    <p className="text-gray-700 text-sm sm:text-base">
-                      スマホでサッと開いて、含まれる・含まれない食材をすぐに確認できます
-                    </p>
-                  </div>
+              </div>
+              
+              {/* After */}
+              <div className="bg-gradient-to-br from-logo-green/10 to-green-50 rounded-lg p-6 sm:p-8 border-2 border-logo-green/20">
+                <div className="text-center mb-4">
+                  <div className="text-4xl mb-2">😊</div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-4">After</h3>
                 </div>
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 bg-logo-green rounded-full flex items-center justify-center text-white font-bold">
-                    ✓
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <span className="text-logo-green font-bold">✓</span>
+                    <p className="text-gray-700">3秒で確認完了</p>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-1">迷わないデザイン</h3>
-                    <p className="text-gray-700 text-sm sm:text-base">
-                      統一された見やすい表示で、判断に迷いません
-                    </p>
+                  <div className="flex items-start gap-3">
+                    <span className="text-logo-green font-bold">✓</span>
+                    <p className="text-gray-700">見やすい表示</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="text-logo-green font-bold">✓</span>
+                    <p className="text-gray-700">安心して選べる</p>
                   </div>
                 </div>
               </div>
@@ -224,203 +187,195 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 使われるシーン */}
+        {/* The Problem - Pain Points */}
         <section className="py-12 sm:py-16 bg-gray-50">
-          <div className="max-w-5xl mx-auto px-6 sm:px-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8 text-center">
-              こんなときに使われています
+          <div className="max-w-2xl mx-auto px-6">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-8 text-center">
+              こんな不安、ありませんか？
             </h2>
+            
             <div className="space-y-6">
-              <div className="bg-white rounded-lg p-6 border-l-4 border-logo-orange shadow-sm">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  🍽️ 行くレストランで本当に食べれる？
+              <div className="bg-white rounded-lg p-6 shadow-sm">
+                <div className="text-4xl mb-4 text-center">😰</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">
+                  外食前の不安
                 </h3>
-                <p className="text-gray-700">
-                  レストランに行く前に、メニューに含まれるアレルゲンを事前にチェック
+                <p className="text-gray-700 text-center">
+                  本当に大丈夫？
                 </p>
               </div>
-              <div className="bg-white rounded-lg p-6 border-l-4 border-logo-green shadow-sm">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  🏪 友人・同僚の店選びを後悔しない
+              
+              <div className="bg-white rounded-lg p-6 shadow-sm">
+                <div className="text-4xl mb-4 text-center">🔍</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">
+                  情報を探す時間
                 </h3>
-                <p className="text-gray-700">
-                  複数の候補店を比較して、安心して選べるお店を見つける
+                <p className="text-gray-700 text-center">
+                  何分もかかる...
                 </p>
               </div>
-              <div className="bg-white rounded-lg p-6 border-l-4 border-logo-blue shadow-sm">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  👥 幹事や店選び担当
+              
+              <div className="bg-white rounded-lg p-6 shadow-sm">
+                <div className="text-4xl mb-4 text-center">📋</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">
+                  読みにくい表
                 </h3>
-                <p className="text-gray-700">
-                  みんなで外食するとき、アレルギーのある人も安心して参加できるお店を選ぶ
-                </p>
-              </div>
-              <div className="bg-white rounded-lg p-6 border-l-4 border-logo-orange shadow-sm">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  👨‍👩‍👧‍👦 アレルギー持ちのお子さんも安心
-                </h3>
-                <p className="text-gray-700">
-                  アレルギーを持つお子さんと一緒に、安心して外食を楽しむ
+                <p className="text-gray-700 text-center">
+                  見づらくて困る
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* 価値・メリット */}
+        {/* The Solution - How It Works */}
         <section className="py-12 sm:py-16 bg-white">
-          <div className="max-w-5xl mx-auto px-6 sm:px-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-8 sm:mb-12 text-center">
-              アレチェックの3つの価値
+          <div className="max-w-2xl mx-auto px-6">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-8 text-center">
+              アレチェックで解決
             </h2>
-            <div className="grid sm:grid-cols-3 gap-6 sm:gap-8">
-              <div className="bg-gradient-to-br from-logo-green/5 to-white rounded-lg shadow-md p-6 text-center">
-                <div className="text-4xl mb-4">🔎</div>
+            
+            <div className="space-y-8">
+              {/* Step 1 */}
+              <div className="text-center">
+                <div className="text-4xl mb-4">1️⃣</div>
+                <div className="bg-gray-50 rounded-lg p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    アレルギーを選択
+                  </h3>
+                  <p className="text-gray-700 text-sm">
+                    あなたのアレルギーを選ぶだけ
+                  </p>
+                </div>
+              </div>
+              
+              {/* Arrow */}
+              <div className="text-center text-2xl text-gray-400">↓</div>
+              
+              {/* Step 2 */}
+              <div className="text-center">
+                <div className="text-4xl mb-4">2️⃣</div>
+                <div className="bg-gray-50 rounded-lg p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    お店を選ぶ
+                  </h3>
+                  <p className="text-gray-700 text-sm">
+                    知りたいお店を選択
+                  </p>
+                </div>
+              </div>
+              
+              {/* Arrow */}
+              <div className="text-center text-2xl text-gray-400">↓</div>
+              
+              {/* Step 3 */}
+              <div className="text-center">
+                <div className="text-4xl mb-4">✅</div>
+                <div className="bg-gradient-to-br from-logo-green/10 to-green-50 rounded-lg p-6 border-2 border-logo-green/20">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    3秒で確認完了
+                  </h3>
+                  <p className="text-gray-700 text-sm">
+                    すぐに結果がわかる
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Use Cases */}
+        <section className="py-12 sm:py-16 bg-white">
+          <div className="max-w-2xl mx-auto px-6">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-8 text-center">
+              こんな時に使えます
+            </h2>
+            
+            <div className="space-y-6">
+              <div className="bg-gray-50 rounded-lg p-6 text-center">
+                <div className="text-4xl mb-3">🍽️</div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  レストランに行く前
+                </h3>
+              </div>
+              
+              <div className="bg-gray-50 rounded-lg p-6 text-center">
+                <div className="text-4xl mb-3">👥</div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  みんなで外食する時
+                </h3>
+              </div>
+              
+              <div className="bg-gray-50 rounded-lg p-6 text-center">
+                <div className="text-4xl mb-3">👨‍👩‍👧‍👦</div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  家族で外食する時
+                </h3>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Benefits - 3 Key Values */}
+        <section className="py-12 sm:py-16 bg-gray-50">
+          <div className="max-w-2xl mx-auto px-6">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-8 text-center">
+              3つの安心
+            </h2>
+            
+            <div className="space-y-6">
+              <div className="bg-white rounded-lg p-6 shadow-sm text-center">
+                <div className="text-5xl mb-4">🔍</div>
                 <h3 className="text-xl font-bold text-logo-green mb-3">
                   探さない
                 </h3>
-                <p className="text-gray-700 text-sm sm:text-base">
-                  複数のサイトを行き来する必要がありません。一つのアプリですべて確認できます
+                <p className="text-gray-700">
+                  一つのアプリで完結
                 </p>
               </div>
-              <div className="bg-gradient-to-br from-logo-orange/5 to-white rounded-lg shadow-md p-6 text-center">
-                <div className="text-4xl mb-4">✨</div>
+              
+              <div className="bg-white rounded-lg p-6 shadow-sm text-center">
+                <div className="text-5xl mb-4">✨</div>
                 <h3 className="text-xl font-bold text-logo-orange mb-3">
                   迷わない
                 </h3>
-                <p className="text-gray-700 text-sm sm:text-base">
-                  統一された見やすい表示で、すぐに判断できます。迷う時間がなくなります
+                <p className="text-gray-700">
+                  見やすい表示
                 </p>
               </div>
-              <div className="bg-gradient-to-br from-logo-green/5 to-white rounded-lg shadow-md p-6 text-center">
-                <div className="text-4xl mb-4">💚</div>
+              
+              <div className="bg-white rounded-lg p-6 shadow-sm text-center">
+                <div className="text-5xl mb-4">💚</div>
                 <h3 className="text-xl font-bold text-logo-green mb-3">
                   安心して選べる
                 </h3>
-                <p className="text-gray-700 text-sm sm:text-base">
-                  正確な情報をすぐに確認できるので、外食の不安を減らし、選択肢を広げられます
+                <p className="text-gray-700">
+                  不安を減らせる
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* サインアップ特典セクション */}
-        <section className="py-12 sm:py-16 bg-white">
-          <div className="max-w-5xl mx-auto px-6 sm:px-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8 text-center">
-              サインアップで<br className="sm:hidden" />
-              さらに便利に
+
+        {/* Final CTA */}
+        <section className="py-16 sm:py-20 bg-logo-green text-white">
+          <div className="max-w-2xl mx-auto px-6 text-center">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+              外食の不安を、<br />
+              安心に変える
             </h2>
-            <p className="text-lg sm:text-xl text-gray-700 mb-8 sm:mb-10 text-center max-w-2xl mx-auto">
-              無料でアカウントを作成すると、以下の機能がアンロックされます
-            </p>
             
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-8">
-              <div className="bg-gradient-to-br from-logo-green/10 to-white rounded-lg p-6 border border-logo-green/20 shadow-sm">
-                <div className="text-3xl mb-4">☁️</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  クラウド同期
-                </h3>
-                <p className="text-sm text-gray-700">
-                  複数のデバイス間でアレルギー情報を自動同期。スマホ、タブレット、PCで同じデータにアクセスできます
-                </p>
-              </div>
-
-              <div className="bg-gradient-to-br from-logo-orange/10 to-white rounded-lg p-6 border border-logo-orange/20 shadow-sm">
-                <div className="text-3xl mb-4">📱</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  マルチデバイス対応
-                </h3>
-                <p className="text-sm text-gray-700">
-                  どのデバイスからでも、保存したアレルギー情報とメニューチェック履歴にアクセスできます
-                </p>
-              </div>
-
-              <div className="bg-gradient-to-br from-logo-blue/10 to-white rounded-lg p-6 border border-logo-blue/20 shadow-sm">
-                <div className="text-3xl mb-4">💾</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  データバックアップ
-                </h3>
-                <p className="text-sm text-gray-700">
-                  アレルギー情報がクラウドに安全に保存され、デバイスを紛失してもデータが失われません
-                </p>
-              </div>
-
-              <div className="bg-gradient-to-br from-logo-green/10 to-white rounded-lg p-6 border border-logo-green/20 shadow-sm">
-                <div className="text-3xl mb-4">📊</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  詳細な分析
-                </h3>
-                <p className="text-sm text-gray-700">
-                  チェックしたメニューの履歴を保存し、アレルギー傾向を分析できます
-                </p>
-              </div>
-
-              <div className="bg-gradient-to-br from-logo-orange/10 to-white rounded-lg p-6 border border-logo-orange/20 shadow-sm">
-                <div className="text-3xl mb-4">🔔</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  リマインダー機能
-                </h3>
-                <p className="text-sm text-gray-700">
-                  定期的にアレルギー情報の確認をリマインダーでお知らせします
-                </p>
-              </div>
-
-              <div className="bg-gradient-to-br from-logo-blue/10 to-white rounded-lg p-6 border border-logo-blue/20 shadow-sm">
-                <div className="text-3xl mb-4">👨‍⚕️</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  医師との共有
-                </h3>
-                <p className="text-sm text-gray-700">
-                  アレルギー情報を医師と共有して、より適切なアドバイスを受けられます
-                </p>
-              </div>
-            </div>
-
-            <div className="text-center">
-              <Link
-                href="/log-in"
-                className="inline-flex items-center justify-center px-8 py-4 bg-logo-orange text-white rounded-full font-semibold text-lg shadow-lg hover:bg-orange-600 transition-colors dark:bg-logo-orange dark:text-white"
-                style={{ WebkitTapHighlightColor: 'transparent' }}
-              >
-                今すぐサインアップ
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        {/* まとめ / CTA */}
-        <section className="py-12 sm:py-16 bg-logo-green text-white">
-          <div className="max-w-5xl mx-auto px-6 sm:px-12 text-center">
-            <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8">
-              外食の不安を減らし、<br className="sm:hidden" />
-              選択肢を広げる
-            </h2>
-            <p className="text-lg sm:text-xl mb-8 sm:mb-10 text-green-50 max-w-2xl mx-auto">
-              アレチェックは、食物アレルギーを持つ人やその家族が、<br className="hidden sm:block" />
-              安心して外食を楽しめるようサポートするサービスです。
+            <Link
+              href="#start-now"
+              className="inline-block mt-8 px-8 py-4 bg-white text-logo-green rounded-full font-semibold text-lg shadow-lg hover:bg-gray-100 transition-colors"
+            >
+              今すぐ無料で試す
+            </Link>
+            
+            <p className="mt-4 text-green-100 text-sm">
+              サインアップ不要
             </p>
-            <p className="text-base sm:text-lg mb-8 text-green-100 max-w-xl mx-auto">
-              複数のチェーン店のアレルギー情報を、<br className="sm:hidden" />
-              探さず・迷わず確認できる。<br />
-              それがアレチェックです。
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="#start-now"
-                className="inline-flex items-center justify-center px-8 py-4 bg-white text-logo-green rounded-full font-semibold text-lg shadow-lg hover:bg-gray-100 transition-colors"
-              >
-                今すぐ試す
-              </Link>
-              <Link
-                href="/menu"
-                className="inline-flex items-center justify-center px-8 py-4 bg-logo-orange text-white rounded-full font-semibold text-lg shadow-lg hover:bg-orange-600 transition-colors dark:bg-logo-orange dark:text-white"
-                style={{ WebkitTapHighlightColor: 'transparent' }}
-              >
-                メニューをチェック
-              </Link>
-            </div>
           </div>
         </section>
       </div>

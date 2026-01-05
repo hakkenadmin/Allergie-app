@@ -20,14 +20,16 @@ export default function MenuTable({ store, onClose, refreshKey, onCsvUpload, onP
   const [editingMenuField, setEditingMenuField] = useState<{ itemId: number; field: string } | null>(null)
   const [editMenuValue, setEditMenuValue] = useState<string>('')
   const [editingAllergies, setEditingAllergies] = useState<number | null>(null)
-  const [tempAllergies, setTempAllergies] = useState<number[]>([])
+  const [tempAllergiesContains, setTempAllergiesContains] = useState<number[]>([])
+  const [tempAllergiesShare, setTempAllergiesShare] = useState<number[]>([])
   const [isCreatingNew, setIsCreatingNew] = useState(false)
   const [newItem, setNewItem] = useState<Partial<MenuItem>>({
     menu_name: '',
     description: '',
     price: undefined,
     category: '',
-    allergies: [],
+    allergies_contains: [],
+    allergies_share: [],
     is_published: true,
     note: '',
   })
@@ -69,7 +71,8 @@ export default function MenuTable({ store, onClose, refreshKey, onCsvUpload, onP
       description: '',
       price: undefined,
       category: '',
-      allergies: [],
+      allergies_contains: [],
+      allergies_share: [],
       is_published: true,
       note: '',
     })
@@ -82,7 +85,8 @@ export default function MenuTable({ store, onClose, refreshKey, onCsvUpload, onP
       description: '',
       price: undefined,
       category: '',
-      allergies: [],
+      allergies_contains: [],
+      allergies_share: [],
       is_published: true,
       note: '',
     })
@@ -102,7 +106,8 @@ export default function MenuTable({ store, onClose, refreshKey, onCsvUpload, onP
           store_name: store.store_name,
           menu_name: newItem.menu_name,
           description: newItem.description || null,
-          allergies: (newItem.allergies || []).map(id => id.toString()),
+          allergies_contains: (newItem.allergies_contains || []).map(id => id.toString()),
+          allergies_share: (newItem.allergies_share || []).map(id => id.toString()),
           price: newItem.price || null,
           category: newItem.category || null,
           is_published: newItem.is_published ?? true,
@@ -121,7 +126,8 @@ export default function MenuTable({ store, onClose, refreshKey, onCsvUpload, onP
         description: '',
         price: undefined,
         category: '',
-        allergies: [],
+        allergies_contains: [],
+      allergies_share: [],
         is_published: true,
         note: '',
       })
@@ -213,27 +219,43 @@ export default function MenuTable({ store, onClose, refreshKey, onCsvUpload, onP
 
   const handleEditAllergies = (item: MenuItem) => {
     setEditingAllergies(item.id)
-    setTempAllergies([...(item.allergies || [])])
+    setTempAllergiesContains([...(item.allergies_contains || [])])
+    setTempAllergiesShare([...(item.allergies_share || [])])
   }
 
-  const handleRemoveAllergy = (allergyId: number) => {
-    setTempAllergies(tempAllergies.filter(id => id !== allergyId))
-  }
-
-  const handleAddAllergy = (allergyId: number) => {
-    if (!tempAllergies.includes(allergyId)) {
-      setTempAllergies([...tempAllergies, allergyId])
+  const handleRemoveAllergy = (allergyId: number, level: 'contains' | 'share') => {
+    if (level === 'contains') {
+      setTempAllergiesContains(tempAllergiesContains.filter(id => id !== allergyId))
+    } else {
+      setTempAllergiesShare(tempAllergiesShare.filter(id => id !== allergyId))
     }
+  }
+
+  const handleAddAllergy = (allergyId: number, level: 'contains' | 'share') => {
+    if (level === 'contains') {
+      if (!tempAllergiesContains.includes(allergyId)) {
+        setTempAllergiesContains([...tempAllergiesContains, allergyId])
+      }
+    } else {
+      if (!tempAllergiesShare.includes(allergyId)) {
+        setTempAllergiesShare([...tempAllergiesShare, allergyId])
+      }
+    }
+  }
+
+  const handleMoveAllergy = (allergyId: number, fromLevel: 'contains' | 'share', toLevel: 'contains' | 'share') => {
+    handleRemoveAllergy(allergyId, fromLevel)
+    handleAddAllergy(allergyId, toLevel)
   }
 
   const handleSaveAllergies = async (itemId: number) => {
     try {
-      // Convert number[] to DECIMAL[] format for Supabase
-      const allergiesArray = tempAllergies.map(id => id.toString())
-      
       const { error, data } = await supabase
         .from('menu_items')
-        .update({ allergies: allergiesArray })
+        .update({ 
+          allergies_contains: tempAllergiesContains.map(id => id.toString()),
+          allergies_share: tempAllergiesShare.map(id => id.toString())
+        })
         .eq('id', itemId)
         .select()
 
@@ -245,7 +267,8 @@ export default function MenuTable({ store, onClose, refreshKey, onCsvUpload, onP
       await loadMenuItems()
 
       setEditingAllergies(null)
-      setTempAllergies([])
+      setTempAllergiesContains([])
+      setTempAllergiesShare([])
     } catch (err: any) {
       console.error('Error updating allergies:', err)
       alert(`アレルギー情報の更新に失敗しました: ${err?.message || 'Unknown error'}`)
@@ -254,14 +277,20 @@ export default function MenuTable({ store, onClose, refreshKey, onCsvUpload, onP
 
   const handleCancelEditAllergies = () => {
     setEditingAllergies(null)
-    setTempAllergies([])
+    setTempAllergiesContains([])
+    setTempAllergiesShare([])
   }
 
-  const getAllergyNames = (allergyIds: number[]): string => {
-    return allergyIds.map(id => {
+  const getAllergyNames = (allergiesContains: number[], allergiesShare: number[]): string => {
+    const containsNames = allergiesContains.map(id => {
       const allergy = COMMON_ALLERGIES.find((a: CommonAllergy) => a.id === id)
-      return allergy ? allergy.ja : `不明 (${id})`
-    }).join(', ')
+      return allergy ? `${allergy.ja} (含有)` : `不明 (${id})`
+    })
+    const shareNames = allergiesShare.map(id => {
+      const allergy = COMMON_ALLERGIES.find((a: CommonAllergy) => a.id === id)
+      return allergy ? `${allergy.ja} (共有)` : `不明 (${id})`
+    })
+    return [...containsNames, ...shareNames].join(', ')
   }
 
   return (
@@ -508,36 +537,81 @@ export default function MenuTable({ store, onClose, refreshKey, onCsvUpload, onP
                     <td className="px-4 sm:px-6 py-4 text-sm text-gray-500">
                       {editingAllergies === item.id ? (
                         <div className="space-y-2 min-w-[300px]">
-                          {/* Existing allergies with remove buttons */}
-                          <div className="flex flex-wrap gap-2">
-                            {tempAllergies.length > 0 ? (
-                              tempAllergies.map((allergyId) => {
-                                const allergy = COMMON_ALLERGIES.find((a: CommonAllergy) => a.id === allergyId)
-                                return (
-                                  <span
-                                    key={allergyId}
-                                    className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs"
-                                  >
-                                    {allergy ? allergy.ja : `不明 (${allergyId})`}
-                                    <button
-                                      onClick={() => handleRemoveAllergy(allergyId)}
-                                      className="text-blue-600 hover:text-red-600 font-bold"
+                          {/* Contains allergies */}
+                          <div>
+                            <label className="text-xs font-semibold text-gray-700 mb-1 block">●含有:</label>
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              {tempAllergiesContains.length > 0 ? (
+                                tempAllergiesContains.map((allergyId) => {
+                                  const allergy = COMMON_ALLERGIES.find((a: CommonAllergy) => a.id === allergyId)
+                                  return (
+                                    <span
+                                      key={allergyId}
+                                      className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-800 rounded text-xs"
                                     >
-                                      ×
-                                    </button>
-                                  </span>
-                                )
-                              })
-                            ) : (
-                              <span className="text-gray-400 text-xs">アレルギーなし</span>
-                            )}
+                                      {allergy ? allergy.ja : `不明 (${allergyId})`}
+                                      <button
+                                        onClick={() => handleRemoveAllergy(allergyId, 'contains')}
+                                        className="text-red-600 hover:text-red-800 font-bold"
+                                      >
+                                        ×
+                                      </button>
+                                      <button
+                                        onClick={() => handleMoveAllergy(allergyId, 'contains', 'share')}
+                                        className="text-xs text-blue-600 hover:text-blue-800"
+                                        title="共有に移動"
+                                      >
+                                        →△
+                                      </button>
+                                    </span>
+                                  )
+                                })
+                              ) : (
+                                <span className="text-gray-400 text-xs">なし</span>
+                              )}
+                            </div>
+                          </div>
+                          {/* Share allergies */}
+                          <div>
+                            <label className="text-xs font-semibold text-gray-700 mb-1 block">△共有:</label>
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              {tempAllergiesShare.length > 0 ? (
+                                tempAllergiesShare.map((allergyId) => {
+                                  const allergy = COMMON_ALLERGIES.find((a: CommonAllergy) => a.id === allergyId)
+                                  return (
+                                    <span
+                                      key={allergyId}
+                                      className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs"
+                                    >
+                                      {allergy ? allergy.ja : `不明 (${allergyId})`}
+                                      <button
+                                        onClick={() => handleRemoveAllergy(allergyId, 'share')}
+                                        className="text-yellow-600 hover:text-yellow-800 font-bold"
+                                      >
+                                        ×
+                                      </button>
+                                      <button
+                                        onClick={() => handleMoveAllergy(allergyId, 'share', 'contains')}
+                                        className="text-xs text-blue-600 hover:text-blue-800"
+                                        title="含有に移動"
+                                      >
+                                        →●
+                                      </button>
+                                    </span>
+                                  )
+                                })
+                              ) : (
+                                <span className="text-gray-400 text-xs">なし</span>
+                              )}
+                            </div>
                           </div>
                           {/* Add new allergy dropdown */}
                           <div className="flex items-center gap-2">
                             <select
                               onChange={(e) => {
                                 if (e.target.value) {
-                                  handleAddAllergy(Number(e.target.value))
+                                  const [id, level] = e.target.value.split(':')
+                                  handleAddAllergy(Number(id), level as 'contains' | 'share')
                                   e.target.value = ''
                                 }
                               }}
@@ -545,11 +619,18 @@ export default function MenuTable({ store, onClose, refreshKey, onCsvUpload, onP
                             >
                               <option value="">新しいアレルギーを追加</option>
                               {COMMON_ALLERGIES.filter(
-                                (allergy: CommonAllergy) => !tempAllergies.includes(allergy.id)
+                                (allergy: CommonAllergy) => 
+                                  !tempAllergiesContains.includes(allergy.id) && 
+                                  !tempAllergiesShare.includes(allergy.id)
                               ).map((allergy: CommonAllergy) => (
-                                <option key={allergy.id} value={allergy.id}>
-                                  {allergy.ja}
-                                </option>
+                                <>
+                                  <option key={`${allergy.id}:contains`} value={`${allergy.id}:contains`}>
+                                    {allergy.ja} (●含有)
+                                  </option>
+                                  <option key={`${allergy.id}:share`} value={`${allergy.id}:share`}>
+                                    {allergy.ja} (△共有)
+                                  </option>
+                                </>
                               ))}
                             </select>
                           </div>
@@ -574,16 +655,31 @@ export default function MenuTable({ store, onClose, refreshKey, onCsvUpload, onP
                           onClick={() => handleEditAllergies(item)}
                           className="cursor-pointer hover:text-logo-blue"
                         >
-                          {item.allergies && item.allergies.length > 0 ? (
+                          {(item.allergies_contains?.length > 0 || item.allergies_share?.length > 0) ? (
                             <div className="flex flex-wrap gap-1 max-h-[48px] overflow-hidden">
-                              {item.allergies.map((allergyId) => {
+                              {/* Contains allergies */}
+                              {item.allergies_contains?.map((allergyId) => {
                                 const allergy = COMMON_ALLERGIES.find((a: CommonAllergy) => a.id === allergyId)
                                 return (
                                   <span
-                                    key={allergyId}
-                                    className="inline-block px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs whitespace-nowrap"
+                                    key={`contains-${allergyId}`}
+                                    className="inline-block px-2 py-1 bg-red-50 text-red-700 rounded text-xs whitespace-nowrap"
+                                    title="含有"
                                   >
-                                    {allergy ? allergy.ja : `不明 (${allergyId})`}
+                                    {allergy ? `${allergy.ja} ●` : `不明 (${allergyId})`}
+                                  </span>
+                                )
+                              })}
+                              {/* Share allergies */}
+                              {item.allergies_share?.map((allergyId) => {
+                                const allergy = COMMON_ALLERGIES.find((a: CommonAllergy) => a.id === allergyId)
+                                return (
+                                  <span
+                                    key={`share-${allergyId}`}
+                                    className="inline-block px-2 py-1 bg-yellow-50 text-yellow-700 rounded text-xs whitespace-nowrap"
+                                    title="共有設備"
+                                  >
+                                    {allergy ? `${allergy.ja} △` : `不明 (${allergyId})`}
                                   </span>
                                 )
                               })}

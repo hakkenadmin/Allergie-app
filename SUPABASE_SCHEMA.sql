@@ -192,7 +192,8 @@ CREATE TABLE IF NOT EXISTS menu_items (
   store_name TEXT NOT NULL,
   menu_name TEXT NOT NULL,
   description TEXT,
-  allergies DECIMAL[] NOT NULL DEFAULT '{}',
+  allergies_contains DECIMAL[] NOT NULL DEFAULT '{}',
+  allergies_share DECIMAL[] NOT NULL DEFAULT '{}',
   price DECIMAL(10,2),
   category TEXT,
   is_published BOOLEAN DEFAULT TRUE NOT NULL,
@@ -203,7 +204,8 @@ CREATE TABLE IF NOT EXISTS menu_items (
 
 CREATE INDEX IF NOT EXISTS idx_menu_items_store_id ON menu_items(store_id);
 CREATE INDEX IF NOT EXISTS idx_menu_items_store_name ON menu_items(store_name);
-CREATE INDEX IF NOT EXISTS idx_menu_items_allergies ON menu_items USING GIN(allergies);
+CREATE INDEX IF NOT EXISTS idx_menu_items_allergies_contains ON menu_items USING GIN(allergies_contains);
+CREATE INDEX IF NOT EXISTS idx_menu_items_allergies_share ON menu_items USING GIN(allergies_share);
 
 ALTER TABLE menu_items ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Anyone can read menu items" ON menu_items;
@@ -283,7 +285,8 @@ CREATE TRIGGER update_menu_items_updated_at
 --   Store-Admin: Access limited to their assigned store (via store_id).
 -- - user_allergies: stores only allergy_id (INT) referencing COMMON_ALLERGIES.id from code.
 --   All allergies must be declared in COMMON_ALLERGIES - no custom allergies allowed.
--- - menu_items.allergies: DECIMAL[] array storing allergy IDs from COMMON_ALLERGIES.
+-- - menu_items.allergies_contains: DECIMAL[] array storing allergy IDs that contain allergen (●).
+-- - menu_items.allergies_share: DECIMAL[] array storing allergy IDs that share equipment (△).
 -- - stores/menu_items: public read, Admin/Store-Admin can insert/update.
 -- - stores.verified: 'y' or 'n' to indicate if store information is verified.
 -- - RLS is enabled on all tables.

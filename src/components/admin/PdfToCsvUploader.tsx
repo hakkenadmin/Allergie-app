@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { Store } from '@/types/menu.types'
 import CsvUploader from './CsvUploader'
+import CsvReviewer from './CsvReviewer'
 
 interface PdfToCsvUploaderProps {
   store: Store
@@ -16,6 +17,17 @@ export default function PdfToCsvUploader({ store, onClose, onUploadComplete }: P
   const [error, setError] = useState<string | null>(null)
   const [generatedCsv, setGeneratedCsv] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
+
+  // Debug: Log state changes
+  useEffect(() => {
+    console.log('PdfToCsvUploader state:', {
+      hasPdfFile: !!pdfFile,
+      processing,
+      hasGeneratedCsv: !!generatedCsv,
+      generatedCsvLength: generatedCsv?.length || 0,
+      error
+    })
+  }, [pdfFile, processing, generatedCsv, error])
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -50,30 +62,111 @@ export default function PdfToCsvUploader({ store, onClose, onUploadComplete }: P
         })
       }, 1000)
 
-      const response = await fetch('/api/pdf-to-csv', {
-        method: 'POST',
-        body: formData,
-      })
+      let response: Response
+      try {
+        // Add timeout to fetch request (5 minutes for large PDFs)
+        const timeoutMs = 5 * 60 * 1000 // 5 minutes
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+        
+        response = await fetch('/api/pdf-to-csv', {
+          method: 'POST',
+          body: formData,
+          signal: controller.signal,
+        })
+        
+        clearTimeout(timeoutId)
+      } catch (fetchError: any) {
+        clearInterval(progressInterval)
+        setProgress(0)
+        // Network error or fetch failed
+        if (fetchError.name === 'AbortError') {
+          throw new Error('タイムアウト: PDFの処理に時間がかかりすぎました。ファイルサイズを確認してください。')
+        }
+        if (fetchError.name === 'TypeError' || fetchError.message?.includes('fetch')) {
+          throw new Error('ネットワークエラー: サーバーに接続できませんでした。インターネット接続を確認してください。')
+        }
+        throw new Error(fetchError.message || 'PDFのアップロードに失敗しました')
+      }
 
       clearInterval(progressInterval)
       setProgress(100)
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'PDFの処理に失敗しました')
+        let errorMessage = 'PDFの処理に失敗しました'
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch (jsonError) {
+          // If response is not JSON, try to get text
+          try {
+            const errorText = await response.text()
+            errorMessage = errorText || errorMessage
+          } catch (textError) {
+            errorMessage = `サーバーエラー (${response.status}): ${response.statusText}`
+          }
+        }
+        throw new Error(errorMessage)
       }
 
-      const data = await response.json()
+      let data: any
+      try {
+        data = await response.json()
+      } catch (jsonError) {
+        throw new Error('サーバーからの応答を解析できませんでした')
+      }
+      
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/97df777c-29ce-4f5f-9983-f0ddeca751ea',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'PdfToCsvUploader.tsx:66',message:'API response received',data:{hasCsv:!!data.csv,csvLength:data.csv?.length,rowCount:data.rowCount,warning:data.warning,validation:data.validation},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       
       if (!data.csv) {
         throw new Error('CSVデータが生成されませんでした')
       }
 
-      setGeneratedCsv(data.csv)
+      // Log row count for debugging
+      const rowCount = data.rowCount || data.csv.split('\n').filter((line: string) => line.trim()).length - 1
+      console.log(`PDF converted to CSV: ${rowCount} menu items`)
+      
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/97df777c-29ce-4f5f-9983-f0ddeca751ea',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'PdfToCsvUploader.tsx:75',message:'CSV passed to reviewer',data:{rowCount,csvFirst500:data.csv.substring(0,500),csvLast500:data.csv.substring(Math.max(0,data.csv.length-500)),validationErrors:data.validation?.errors?.length,validationWarnings:data.validation?.warnings?.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
+      
+      // Store CSV with validation info for review
+      const csvData = {
+        csv: data.csv,
+        validation: data.validation || { isValid: true, errors: [], warnings: [] }
+      }
+      console.log('Setting generatedCsv with data:', { 
+        csvLength: csvData.csv.length, 
+        hasValidation: !!csvData.validation,
+        validationErrors: csvData.validation.errors?.length || 0
+      })
+      setGeneratedCsv(JSON.stringify(csvData))
       setProgress(0)
+      // Note: setProcessing(false) is called in finally block
     } catch (err: any) {
       console.error('PDF processing error:', err)
-      setError(err.message || 'PDFの処理に失敗しました')
+      let errorMessage = 'PDFの処理に失敗しました'
+      
+      if (err instanceof Error) {
+        errorMessage = err.message
+      } else if (typeof err === 'string') {
+        errorMessage = err
+      } else if (err?.message) {
+        errorMessage = err.message
+      }
+      
+      // Handle specific error types
+      if (errorMessage.includes('fetch') || errorMessage.includes('ネットワーク')) {
+        errorMessage = 'ネットワークエラー: サーバーに接続できませんでした。インターネット接続を確認してください。'
+      } else if (errorMessage.includes('timeout') || errorMessage.includes('タイムアウト')) {
+        errorMessage = 'タイムアウト: PDFの処理に時間がかかりすぎました。ファイルサイズを確認してください。'
+      } else if (errorMessage.includes('API key') || errorMessage.includes('OpenAI')) {
+        errorMessage = 'API設定エラー: OpenAI APIキーが設定されていない可能性があります。'
+      }
+      
+      setError(errorMessage)
       setProgress(0)
     } finally {
       setProcessing(false)
@@ -92,8 +185,48 @@ export default function PdfToCsvUploader({ store, onClose, onUploadComplete }: P
     setProgress(0)
   }
 
-  // If CSV is generated, show it in CsvUploader
+  // If CSV is generated, show it in CsvReviewer first, then CsvUploader
   if (generatedCsv) {
+    console.log('generatedCsv exists, length:', generatedCsv.length)
+    try {
+      const parsed = JSON.parse(generatedCsv)
+      console.log('Parsed generatedCsv:', { hasCsv: !!parsed.csv, hasValidation: !!parsed.validation })
+      
+      if (parsed.csv) {
+        // Show reviewer component with validation info if available
+        return (
+          <CsvReviewer
+            store={store}
+            csv={parsed.csv}
+            validation={parsed.validation || { isValid: true, errors: [], warnings: [] }}
+            onClose={() => {
+              console.log('CsvReviewer onClose called')
+              // Reset state when closing from reviewer
+              setGeneratedCsv(null)
+              setPdfFile(null)
+              onClose()
+            }}
+            onUploadComplete={onUploadComplete}
+          />
+        )
+      } else {
+        console.warn('parsed.csv is missing, parsed:', parsed)
+      }
+    } catch (e) {
+      // Fallback to old format (direct CSV string) - show CsvUploader directly
+      console.log('Parsing generatedCsv failed, treating as direct CSV string:', e)
+      return (
+        <CsvUploader
+          store={store}
+          onClose={onClose}
+          onUploadComplete={onUploadComplete}
+          initialCsvData={generatedCsv}
+        />
+      )
+    }
+    // If we get here, something went wrong but we still have generatedCsv
+    // Show CsvUploader as fallback
+    console.warn('Unexpected state: generatedCsv exists but parsing failed, showing CsvUploader')
     return (
       <CsvUploader
         store={store}

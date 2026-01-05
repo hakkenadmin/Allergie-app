@@ -189,48 +189,104 @@ export default function MenuChecker({ storeId }: MenuCheckerProps = {}) {
             {sorted.map(item => {
               const match = matches.find(m => m.menuItem.id === item.id)
               const has = !!match
+              const hasContains = match?.matchedContainsIds.length > 0
+              const hasOnlyShare = match && match.matchedContainsIds.length === 0 && match.matchedShareIds.length > 0
               return (
-                <div key={item.id} className={`border-2 rounded-none sm:rounded-lg p-4 ${has ? 'border-red-200 bg-red-50/30' : 'border-gray-200 bg-gray-50'}`}>
+                <div key={item.id} className={`border-2 rounded-none sm:rounded-lg p-4 ${
+                  hasContains 
+                    ? 'border-red-200 bg-red-50/30' 
+                    : hasOnlyShare 
+                      ? 'border-green-200 bg-green-50/30' 
+                      : 'border-gray-200 bg-gray-50'
+                }`}>
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start">
                     {/* Left side: Menu name, description, and match info */}
                     <div className="flex-1 w-full">
                       <h4 className="font-bold text-lg text-gray-900 mb-1">{item.menu_name}</h4>
                       {item.description && <p className="text-sm text-gray-700 mb-2">{item.description}</p>}
                       {has && match && (
-                        <div className="mt-2">
-                          <div className="px-3 py-1 bg-pink-50 rounded-none sm:rounded-md inline-block">
-                            <p className="text-sm font-medium text-red-500">
-                              一致: {match.matchedAllergyIds.map(id => {
-                                const allergy = COMMON_ALLERGIES.find(a => a.id === id)
-                                return allergy ? `${allergy.ja} (${allergy.name})` : `不明 (${id})`
-                              }).join(', ')}
-                            </p>
-                          </div>
+                        <div className="mt-2 space-y-2">
+                          {/* Contains allergies - Red */}
+                          {match.matchedContainsIds.length > 0 && (
+                            <div className="px-3 py-1 bg-red-50 rounded-none sm:rounded-md inline-block">
+                              <p className="text-sm font-medium text-red-600">
+                                含有一致: {match.matchedContainsIds.map(id => {
+                                  const allergy = COMMON_ALLERGIES.find(a => a.id === id)
+                                  return allergy ? `${allergy.ja} (${allergy.name})` : `不明 (${id})`
+                                }).join(', ')}
+                              </p>
+                            </div>
+                          )}
+                          {/* Share allergies - Green */}
+                          {match.matchedShareIds.length > 0 && (
+                            <div className="px-3 py-1 bg-green-50 rounded-none sm:rounded-md inline-block">
+                              <p className="text-sm font-medium text-green-600">
+                                共有一致: {match.matchedShareIds.map(id => {
+                                  const allergy = COMMON_ALLERGIES.find(a => a.id === id)
+                                  return allergy ? `${allergy.ja} (${allergy.name})` : `不明 (${id})`
+                                }).join(', ')}
+                              </p>
+                            </div>
+                          )}
                           {/* Allergy icons below match field on mobile */}
                           <div className="flex gap-2 mt-2 sm:hidden">
-                            {item.allergies && item.allergies.length > 0 ? (
-                              item.allergies.map((allergyId, idx) => {
-                                const allergy = COMMON_ALLERGIES.find(a => a.id === allergyId)
-                                const isMatched = match?.matchedAllergyIds.includes(allergyId) || false
-                                return (
-                                  <div
-                                    key={idx}
-                                    className={`w-10 h-10 rounded-none flex items-center justify-center ${
-                                      isMatched ? 'bg-red-50 border-2 border-red-200' : 'bg-gray-100 border border-gray-300'
-                                    }`}
-                                  >
-                                    {allergy?.image ? (
-                                      <img
-                                        src={allergy.image}
-                                        alt={allergy.ja}
-                                        className="w-full h-full object-contain rounded-none"
-                                      />
-                                    ) : (
-                                      <span className="text-xs text-gray-500 opacity-75">png</span>
-                                    )}
-                                  </div>
-                                )
-                              })
+                            {(item.allergies_contains?.length > 0 || item.allergies_share?.length > 0) ? (
+                              <>
+                                {/* Contains allergies */}
+                                {item.allergies_contains?.map((allergyId, idx) => {
+                                  const allergy = COMMON_ALLERGIES.find(a => a.id === allergyId)
+                                  const isMatched = match?.matchedContainsIds.includes(allergyId) || false
+                                  return (
+                                    <div
+                                      key={`contains-${idx}`}
+                                      className={`w-10 h-10 rounded-none flex items-center justify-center relative ${
+                                        isMatched ? 'bg-red-50 border-2 border-red-200' : 'bg-gray-100 border border-gray-300'
+                                      }`}
+                                      title={allergy ? `${allergy.ja} (含有)` : ''}
+                                    >
+                                      {allergy?.image ? (
+                                        <>
+                                          <img
+                                            src={allergy.image}
+                                            alt={allergy.ja}
+                                            className="w-full h-full object-contain rounded-none opacity-75"
+                                          />
+                                          <span className="absolute bottom-0 right-0 text-[8px] font-bold">●</span>
+                                        </>
+                                      ) : (
+                                        <span className="text-xs text-gray-500 opacity-75">●</span>
+                                      )}
+                                    </div>
+                                  )
+                                })}
+                                {/* Share allergies */}
+                                {item.allergies_share?.map((allergyId, idx) => {
+                                  const allergy = COMMON_ALLERGIES.find(a => a.id === allergyId)
+                                  const isMatched = match?.matchedShareIds.includes(allergyId) || false
+                                  return (
+                                    <div
+                                      key={`share-${idx}`}
+                                      className={`w-10 h-10 rounded-none flex items-center justify-center relative ${
+                                        isMatched ? 'bg-green-50 border-2 border-green-200' : 'bg-gray-100 border border-gray-300'
+                                      }`}
+                                      title={allergy ? `${allergy.ja} (共有設備)` : ''}
+                                    >
+                                      {allergy?.image ? (
+                                        <>
+                                          <img
+                                            src={allergy.image}
+                                            alt={allergy.ja}
+                                            className="w-full h-full object-contain rounded-none opacity-75"
+                                          />
+                                          <span className="absolute bottom-0 right-0 text-[8px] font-bold">△</span>
+                                        </>
+                                      ) : (
+                                        <span className="text-xs text-gray-500 opacity-75">△</span>
+                                      )}
+                                    </div>
+                                  )
+                                })}
+                              </>
                             ) : (
                               <div className="w-10 h-10 rounded-none bg-green-100 border border-green-300 flex items-center justify-center">
                                 <span className="text-xs text-green-600">✓</span>
@@ -240,30 +296,59 @@ export default function MenuChecker({ storeId }: MenuCheckerProps = {}) {
                         </div>
                       )}
                       {/* Show allergy icons even when no match on mobile */}
-                      {!has && item.allergies && item.allergies.length > 0 && (
+                      {!has && (item.allergies_contains?.length > 0 || item.allergies_share?.length > 0) && (
                         <div className="flex gap-2 mt-2 sm:hidden">
-                          {item.allergies.map((allergyId, idx) => {
+                          {/* Contains allergies */}
+                          {item.allergies_contains?.map((allergyId, idx) => {
                             const allergy = COMMON_ALLERGIES.find(a => a.id === allergyId)
                             return (
                               <div
-                                key={idx}
-                                className="w-10 h-10 rounded-none bg-gray-100 border border-gray-300 flex items-center justify-center"
+                                key={`contains-${idx}`}
+                                className="w-10 h-10 rounded-none bg-gray-100 border border-gray-300 flex items-center justify-center relative"
+                                title={allergy ? `${allergy.ja} (含有)` : ''}
                               >
                                 {allergy?.image ? (
-                                  <img
-                                    src={allergy.image}
-                                    alt={allergy.ja}
-                                    className="w-full h-full object-contain rounded-none"
-                                  />
+                                  <>
+                                    <img
+                                      src={allergy.image}
+                                      alt={allergy.ja}
+                                      className="w-full h-full object-contain rounded-none opacity-75"
+                                    />
+                                    <span className="absolute bottom-0 right-0 text-[8px] font-bold">●</span>
+                                  </>
                                 ) : (
-                                  <span className="text-xs text-gray-500">png</span>
+                                  <span className="text-xs text-gray-500 opacity-75">●</span>
+                                )}
+                              </div>
+                            )
+                          })}
+                          {/* Share allergies */}
+                          {item.allergies_share?.map((allergyId, idx) => {
+                            const allergy = COMMON_ALLERGIES.find(a => a.id === allergyId)
+                            return (
+                              <div
+                                key={`share-${idx}`}
+                                className="w-10 h-10 rounded-none bg-gray-100 border border-gray-300 flex items-center justify-center relative"
+                                title={allergy ? `${allergy.ja} (共有設備)` : ''}
+                              >
+                                {allergy?.image ? (
+                                  <>
+                                    <img
+                                      src={allergy.image}
+                                      alt={allergy.ja}
+                                      className="w-full h-full object-contain rounded-none opacity-75"
+                                    />
+                                    <span className="absolute bottom-0 right-0 text-[8px] font-bold">△</span>
+                                  </>
+                                ) : (
+                                  <span className="text-xs text-gray-500 opacity-75">△</span>
                                 )}
                               </div>
                             )
                           })}
                         </div>
                       )}
-                      {!has && (!item.allergies || item.allergies.length === 0) && (
+                      {!has && (!item.allergies_contains || item.allergies_contains.length === 0) && (!item.allergies_share || item.allergies_share.length === 0) && (
                         <div className="w-10 h-10 rounded-none bg-green-100 border border-green-300 flex items-center justify-center mt-2 sm:hidden">
                           <span className="text-xs text-green-600">✓</span>
                         </div>
@@ -274,29 +359,63 @@ export default function MenuChecker({ storeId }: MenuCheckerProps = {}) {
                     <div className="hidden sm:flex sm:flex-col sm:items-start sm:ml-4">
                       <div>
                         <div className="flex gap-2">
-                          {item.allergies && item.allergies.length > 0 ? (
-                            item.allergies.map((allergyId, idx) => {
-                              const allergy = COMMON_ALLERGIES.find(a => a.id === allergyId)
-                              const isMatched = match?.matchedAllergyIds.includes(allergyId) || false
-                              return (
-                                <div
-                                  key={idx}
-                                  className={`w-10 h-10 rounded-md flex items-center justify-center ${
-                                    isMatched ? 'bg-red-50 border-2 border-red-200' : 'bg-gray-100 border border-gray-300'
-                                  }`}
-                                >
-                                  {allergy?.image ? (
-                                    <img
-                                      src={allergy.image}
-                                      alt={allergy.ja}
-                                      className="w-full h-full object-contain rounded-md"
-                                    />
-                                  ) : (
-                                    <span className="text-xs text-gray-500">png</span>
-                                  )}
-                                </div>
-                              )
-                            })
+                          {(item.allergies_contains?.length > 0 || item.allergies_share?.length > 0) ? (
+                            <>
+                              {/* Contains allergies */}
+                              {item.allergies_contains?.map((allergyId, idx) => {
+                                const allergy = COMMON_ALLERGIES.find(a => a.id === allergyId)
+                                const isMatched = match?.matchedContainsIds.includes(allergyId) || false
+                                return (
+                                  <div
+                                    key={`contains-${idx}`}
+                                    className={`w-10 h-10 rounded-md flex items-center justify-center relative ${
+                                      isMatched ? 'bg-red-50 border-2 border-red-200' : 'bg-gray-100 border border-gray-300'
+                                    }`}
+                                    title={allergy ? `${allergy.ja} (含有)` : ''}
+                                  >
+                                    {allergy?.image ? (
+                                      <>
+                                        <img
+                                          src={allergy.image}
+                                          alt={allergy.ja}
+                                          className="w-full h-full object-contain rounded-md opacity-75"
+                                        />
+                                        <span className="absolute bottom-0 right-0 text-[8px] font-bold">●</span>
+                                      </>
+                                    ) : (
+                                      <span className="text-xs text-gray-500 opacity-75">●</span>
+                                    )}
+                                  </div>
+                                )
+                              })}
+                              {/* Share allergies */}
+                              {item.allergies_share?.map((allergyId, idx) => {
+                                const allergy = COMMON_ALLERGIES.find(a => a.id === allergyId)
+                                const isMatched = match?.matchedShareIds.includes(allergyId) || false
+                                return (
+                                  <div
+                                    key={`share-${idx}`}
+                                    className={`w-10 h-10 rounded-md flex items-center justify-center relative ${
+                                      isMatched ? 'bg-green-50 border-2 border-green-200' : 'bg-gray-100 border border-gray-300'
+                                    }`}
+                                    title={allergy ? `${allergy.ja} (共有設備)` : ''}
+                                  >
+                                    {allergy?.image ? (
+                                      <>
+                                        <img
+                                          src={allergy.image}
+                                          alt={allergy.ja}
+                                          className="w-full h-full object-contain rounded-md opacity-75"
+                                        />
+                                        <span className="absolute bottom-0 right-0 text-[8px] font-bold">△</span>
+                                      </>
+                                    ) : (
+                                      <span className="text-xs text-gray-500 opacity-75">△</span>
+                                    )}
+                                  </div>
+                                )
+                              })}
+                            </>
                           ) : (
                             <div className="w-10 h-10 rounded-md bg-green-100 border border-green-300 flex items-center justify-center">
                               <span className="text-xs text-green-600">✓</span>

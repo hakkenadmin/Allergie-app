@@ -1,15 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
-import type { Store } from '@/types/menu.types'
-import { COMMON_ALLERGIES } from '@/data/commonAllergies'
 
-interface CsvUploaderProps {
-  store: Store
+interface StoreCsvUploaderProps {
   onClose: () => void
   onUploadComplete: () => void
-  initialCsvData?: string // Optional: CSV string to pre-populate
 }
 
 interface CsvRow {
@@ -17,17 +13,16 @@ interface CsvRow {
 }
 
 interface ColumnMapping {
-  menu_name?: string
+  store_name?: string
   description?: string
-  price?: string
-  category?: string
-  allergies_contains?: string
-  allergies_share?: string
-  note?: string
-  is_published?: string
+  managing_company?: string
+  address?: string
+  phone?: string
+  website?: string
+  verified?: string
 }
 
-export default function CsvUploader({ store, onClose, onUploadComplete, initialCsvData }: CsvUploaderProps) {
+export default function StoreCsvUploader({ onClose, onUploadComplete }: StoreCsvUploaderProps) {
   const [csvData, setCsvData] = useState<CsvRow[]>([])
   const [csvHeaders, setCsvHeaders] = useState<string[]>([])
   const [columnMapping, setColumnMapping] = useState<ColumnMapping>({})
@@ -35,16 +30,6 @@ export default function CsvUploader({ store, onClose, onUploadComplete, initialC
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [uploadErrors, setUploadErrors] = useState<string[]>([])
-
-  // Handle initial CSV data
-  useEffect(() => {
-    if (initialCsvData) {
-      parseCsv(initialCsvData)
-      // Log row count for debugging
-      const lines = initialCsvData.split('\n').filter(line => line.trim())
-      console.log(`Parsed CSV: ${lines.length - 1} data rows (excluding header)`)
-    }
-  }, [initialCsvData])
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -70,16 +55,7 @@ export default function CsvUploader({ store, onClose, onUploadComplete, initialC
 
   const parseCsv = (csvText: string) => {
     try {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/97df777c-29ce-4f5f-9983-f0ddeca751ea',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CsvUploader.tsx:69',message:'parseCsv called',data:{csvTextLength:csvText.length,first500Chars:csvText.substring(0,500),last500Chars:csvText.substring(Math.max(0,csvText.length-500))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-      // #endregion
-      
       const lines = csvText.split('\n').filter(line => line.trim())
-      
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/97df777c-29ce-4f5f-9983-f0ddeca751ea',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CsvUploader.tsx:72',message:'After split and filter',data:{totalLines:lines.length,firstLine:lines[0],lastLine:lines[lines.length-1]},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-      // #endregion
-      
       if (lines.length === 0) {
         alert('CSVファイルが空です')
         return
@@ -91,7 +67,6 @@ export default function CsvUploader({ store, onClose, onUploadComplete, initialC
 
       // Parse rows
       const rows: CsvRow[] = []
-      let skippedRows = 0
       for (let i = 1; i < lines.length; i++) {
         const values = parseCsvLine(lines[i])
         const row: CsvRow = {}
@@ -101,14 +76,8 @@ export default function CsvUploader({ store, onClose, onUploadComplete, initialC
         // Only add non-empty rows
         if (Object.values(row).some(val => val.trim())) {
           rows.push(row)
-        } else {
-          skippedRows++
         }
       }
-
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/97df777c-29ce-4f5f-9983-f0ddeca751ea',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CsvUploader.tsx:95',message:'After parsing rows',data:{totalDataLines:lines.length-1,parsedRows:rows.length,skippedRows,firstParsedRow:rows[0],lastParsedRow:rows[rows.length-1]},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-      // #endregion
 
       if (rows.length === 0) {
         alert('データ行が見つかりませんでした')
@@ -162,41 +131,9 @@ export default function CsvUploader({ store, onClose, onUploadComplete, initialC
     }))
   }
 
-  // Parse allergies - supports both Japanese names and numbers
-  const parseAllergiesArray = (allergyText: string): number[] => {
-    if (!allergyText || !allergyText.trim()) return []
-    
-    return allergyText
-      .split(/[,、]/)
-      .map(str => str.trim())
-      .filter(str => str.length > 0)
-      .map(str => {
-        // First try to parse as number
-        const num = parseInt(str, 10)
-        if (!isNaN(num)) {
-          return num
-        }
-        
-        // If not a number, try to find by Japanese name
-        const allergy = COMMON_ALLERGIES.find(a => a.ja === str)
-        if (allergy) {
-          return allergy.id
-        }
-        
-        // Try partial match (in case of variations)
-        const partialMatch = COMMON_ALLERGIES.find(a => a.ja.includes(str) || str.includes(a.ja))
-        if (partialMatch) {
-          return partialMatch.id
-        }
-        
-        return null
-      })
-      .filter((num): num is number => num !== null)
-  }
-
   const handleUpload = async () => {
-    if (!columnMapping.menu_name) {
-      alert('メニュー名の列を選択してください')
+    if (!columnMapping.store_name) {
+      alert('店舗名の列を選択してください')
       return
     }
 
@@ -205,60 +142,50 @@ export default function CsvUploader({ store, onClose, onUploadComplete, initialC
     setUploadErrors([])
 
     try {
-      const itemsToInsert = csvData
+      const storesToInsert = csvData
         .map((row, index) => {
-          const menuName = row[columnMapping.menu_name!]?.trim() || ''
-          if (!menuName) {
-            setUploadErrors(prev => [...prev, `行 ${index + 2}: メニュー名が空です`])
+          const storeName = row[columnMapping.store_name!]?.trim() || ''
+          if (!storeName) {
+            setUploadErrors(prev => [...prev, `行 ${index + 2}: 店舗名が空です`])
             return null
           }
 
-          const allergies_contains = columnMapping.allergies_contains 
-            ? parseAllergiesArray(row[columnMapping.allergies_contains])
-            : []
-          
-          const allergies_share = columnMapping.allergies_share 
-            ? parseAllergiesArray(row[columnMapping.allergies_share])
-            : []
+          const verified = columnMapping.verified 
+            ? (row[columnMapping.verified]?.toLowerCase().trim() === 'y' || 
+               row[columnMapping.verified]?.toLowerCase().trim() === 'yes' ||
+               row[columnMapping.verified]?.toLowerCase().trim() === 'true' ||
+               row[columnMapping.verified]?.trim() === '1' ? 'y' : 'n')
+            : 'n'
 
-          const item: any = {
-            store_id: store.id,
-            store_name: store.store_name,
-            menu_name: menuName,
+          const store: any = {
+            store_name: storeName,
             description: columnMapping.description ? (row[columnMapping.description]?.trim() || null) : null,
-            price: columnMapping.price 
-              ? (row[columnMapping.price]?.trim() ? parseFloat(row[columnMapping.price].trim()) : null)
-              : null,
-            category: columnMapping.category ? (row[columnMapping.category]?.trim() || null) : null,
-            note: columnMapping.note ? (row[columnMapping.note]?.trim() || null) : null,
-            is_published: columnMapping.is_published 
-              ? (row[columnMapping.is_published]?.toLowerCase().trim() === 'true' || 
-                 row[columnMapping.is_published]?.trim() === '1' ||
-                 row[columnMapping.is_published]?.toLowerCase().trim() === 'yes')
-              : true,
-            allergies_contains: allergies_contains.map(id => id.toString()),
-            allergies_share: allergies_share.map(id => id.toString()),
+            managing_company: columnMapping.managing_company ? (row[columnMapping.managing_company]?.trim() || null) : null,
+            address: columnMapping.address ? (row[columnMapping.address]?.trim() || null) : null,
+            phone: columnMapping.phone ? (row[columnMapping.phone]?.trim() || null) : null,
+            website: columnMapping.website ? (row[columnMapping.website]?.trim() || null) : null,
+            verified: verified,
           }
 
-          return item
+          return store
         })
-        .filter(item => item !== null)
+        .filter(store => store !== null)
 
-      if (itemsToInsert.length === 0) {
+      if (storesToInsert.length === 0) {
         alert('有効なデータがありません')
         setUploading(false)
         return
       }
 
-      // Insert items in batches
+      // Insert stores in batches
       const batchSize = 10
       let inserted = 0
       const errors: string[] = []
 
-      for (let i = 0; i < itemsToInsert.length; i += batchSize) {
-        const batch = itemsToInsert.slice(i, i + batchSize)
+      for (let i = 0; i < storesToInsert.length; i += batchSize) {
+        const batch = storesToInsert.slice(i, i + batchSize)
         const { error } = await supabase
-          .from('menu_items')
+          .from('stores')
           .insert(batch)
 
         if (error) {
@@ -269,15 +196,15 @@ export default function CsvUploader({ store, onClose, onUploadComplete, initialC
           inserted += batch.length
         }
 
-        setUploadProgress(Math.round(((i + batch.length) / itemsToInsert.length) * 100))
+        setUploadProgress(Math.round(((i + batch.length) / storesToInsert.length) * 100))
       }
 
       // Show results
       if (errors.length > 0) {
         setUploadErrors(errors)
-        alert(`${inserted}件のメニュー項目を追加しました。${errors.length}件のエラーが発生しました。`)
+        alert(`${inserted}件の店舗を追加しました。${errors.length}件のエラーが発生しました。`)
       } else {
-        alert(`${inserted}件のメニュー項目を追加しました`)
+        alert(`${inserted}件の店舗を追加しました`)
         onUploadComplete()
         onClose()
       }
@@ -293,20 +220,19 @@ export default function CsvUploader({ store, onClose, onUploadComplete, initialC
   }
 
   const databaseFields = [
-    { key: 'menu_name', label: 'メニュー名', required: true },
+    { key: 'store_name', label: '店舗名', required: true },
     { key: 'description', label: '説明', required: false },
-    { key: 'price', label: '価格', required: false },
-    { key: 'category', label: 'カテゴリ', required: false },
-    { key: 'allergies_contains', label: '含有アレルギー (数値配列)', required: false },
-    { key: 'allergies_share', label: '共有アレルギー (数値配列)', required: false },
-    { key: 'note', label: '備考', required: false },
-    { key: 'is_published', label: '公開', required: false },
+    { key: 'managing_company', label: '運営会社', required: false },
+    { key: 'address', label: '住所', required: false },
+    { key: 'phone', label: '電話番号', required: false },
+    { key: 'website', label: 'ウェブサイト', required: false },
+    { key: 'verified', label: '認証済み (y/n)', required: false },
   ]
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">CSVアップロード</h2>
+        <h2 className="text-lg font-semibold text-gray-900">店舗情報CSVアップロード</h2>
         <button
           onClick={onClose}
           className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
@@ -331,8 +257,8 @@ export default function CsvUploader({ store, onClose, onUploadComplete, initialC
             <div className="flex items-center justify-between mb-2">
               <p className="font-semibold">CSV形式の要件:</p>
               <a
-                href="/sample_menu.csv"
-                download="sample_menu.csv"
+                href="/sample_stores.csv"
+                download="sample_stores.csv"
                 className="px-3 py-1 text-xs bg-logo-blue text-white rounded hover:bg-blue-600 transition-colors flex items-center gap-1.5"
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -341,13 +267,12 @@ export default function CsvUploader({ store, onClose, onUploadComplete, initialC
                 サンプルCSVをダウンロード
               </a>
             </div>
-                <ul className="list-disc list-inside space-y-1">
-                  <li>1行目はヘッダーとして扱われます</li>
-                  <li>含有アレルギー列: 日本語名のカンマ区切り (例: えび,小麦,卵) または数値 (例: 1,3,5) - ●含有のアレルギー</li>
-                  <li>共有アレルギー列: 日本語名のカンマ区切り (例: かに,乳) または数値 (例: 2,4) - △共有設備のアレルギー</li>
-                  <li>公開列は true/false または 1/0 または yes/no</li>
-                  <li>アレルギー名は日本語（えび、小麦、卵など）または数値（1,3,5など）のどちらでも使用できます</li>
-                </ul>
+            <ul className="list-disc list-inside space-y-1">
+              <li>1行目はヘッダーとして扱われます</li>
+              <li>店舗名は必須です</li>
+              <li>認証済み列は y/n または yes/no または true/false または 1/0</li>
+              <li>複数の店舗を一度に登録できます</li>
+            </ul>
           </div>
         </div>
       ) : (
@@ -459,10 +384,10 @@ export default function CsvUploader({ store, onClose, onUploadComplete, initialC
               </button>
               <button
                 onClick={handleUpload}
-                disabled={uploading || !columnMapping.menu_name}
+                disabled={uploading || !columnMapping.store_name}
                 className="px-4 py-2 bg-logo-green text-white rounded hover:bg-green-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
-                {uploading ? 'アップロード中...' : 'データベースに追加'}
+                {uploading ? 'アップロード中...' : '店舗を一括登録'}
               </button>
             </div>
           </div>

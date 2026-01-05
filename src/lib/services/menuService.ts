@@ -40,10 +40,28 @@ export const getAllMenuItems = async (): Promise<MenuItem[]> => {
     const { data, error } = await supabase.from('menu_items').select('*').order('store_name', { ascending: true }).order('menu_name', { ascending: true })
     if (error) throw error
     // Convert DECIMAL[] to number[]
-    return (data || []).map((r: any) => ({ 
-      ...(r as object), 
-      allergies: (r.allergies || []).map((a: any) => Number(a))
-    })) as MenuItem[]
+    return (data || []).map((r: any) => {
+      let allergies_contains: number[] = []
+      let allergies_share: number[] = []
+      
+      if (r.allergies_contains) {
+        allergies_contains = Array.isArray(r.allergies_contains) 
+          ? r.allergies_contains.map((id: any) => Number(id))
+          : []
+      }
+      
+      if (r.allergies_share) {
+        allergies_share = Array.isArray(r.allergies_share)
+          ? r.allergies_share.map((id: any) => Number(id))
+          : []
+      }
+      
+      return { 
+        ...(r as object), 
+        allergies_contains,
+        allergies_share
+      } as MenuItem
+    })
   } catch (err) {
     console.error('getAllMenuItems error', err)
     return []
@@ -55,10 +73,28 @@ export const getMenuItemsByStore = async (storeName: string): Promise<MenuItem[]
     const { data, error } = await supabase.from('menu_items').select('*').eq('store_name', storeName).order('menu_name', { ascending: true })
     if (error) throw error
     // Convert DECIMAL[] to number[]
-    return (data || []).map((r: any) => ({ 
-      ...(r as object), 
-      allergies: (r.allergies || []).map((a: any) => Number(a))
-    })) as MenuItem[]
+    return (data || []).map((r: any) => {
+      let allergies_contains: number[] = []
+      let allergies_share: number[] = []
+      
+      if (r.allergies_contains) {
+        allergies_contains = Array.isArray(r.allergies_contains) 
+          ? r.allergies_contains.map((id: any) => Number(id))
+          : []
+      }
+      
+      if (r.allergies_share) {
+        allergies_share = Array.isArray(r.allergies_share)
+          ? r.allergies_share.map((id: any) => Number(id))
+          : []
+      }
+      
+      return { 
+        ...(r as object), 
+        allergies_contains,
+        allergies_share
+      } as MenuItem
+    })
   } catch (err) {
     console.error('getMenuItemsByStore error', err)
     return []
@@ -70,18 +106,36 @@ export const matchMenuItems = (menuItems: MenuItem[], userAllergies: Allergy[]):
   const matches: MenuItemMatch[] = []
 
   for (const item of menuItems) {
-    const matchedIds: number[] = []
-    for (const menuAllergyId of (item.allergies || [])) {
-      if (userAllergyIds.includes(menuAllergyId)) {
-        if (!matchedIds.includes(menuAllergyId)) {
-          matchedIds.push(menuAllergyId)
+    const matchedContainsIds: number[] = []
+    const matchedShareIds: number[] = []
+    
+    // Check contains allergies
+    for (const allergyId of (item.allergies_contains || [])) {
+      if (userAllergyIds.includes(allergyId)) {
+        if (!matchedContainsIds.includes(allergyId)) {
+          matchedContainsIds.push(allergyId)
         }
       }
     }
+    
+    // Check share allergies
+    for (const allergyId of (item.allergies_share || [])) {
+      if (userAllergyIds.includes(allergyId)) {
+        if (!matchedShareIds.includes(allergyId)) {
+          matchedShareIds.push(allergyId)
+        }
+      }
+    }
+    
+    // Combine all matched IDs
+    const matchedIds = [...matchedContainsIds, ...matchedShareIds]
+    
     if (matchedIds.length > 0) {
       matches.push({
         menuItem: item,
         matchedAllergyIds: matchedIds,
+        matchedContainsIds: matchedContainsIds,
+        matchedShareIds: matchedShareIds,
         userAllergyIds: userAllergyIds.filter(id => matchedIds.includes(id)),
       })
     }
