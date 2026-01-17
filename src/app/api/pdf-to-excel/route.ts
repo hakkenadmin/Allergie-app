@@ -7,6 +7,7 @@ import {
   ExportPDFTargetFormat,
   ExportPDFJob,
   ExportPDFResult,
+  PDFServicesResponse,
 } from '@adobe/pdfservices-node-sdk'
 import { Readable } from 'stream'
 
@@ -168,7 +169,7 @@ export async function POST(request: NextRequest) {
 
     // Get job result
     // The SDK expects pollingUrl parameter (the location from submit is the polling URL)
-    let pdfServicesResponse: ExportPDFResult
+    let pdfServicesResponse: PDFServicesResponse<ExportPDFResult>
     
     try {
       console.log('Getting job result with polling URL:', location)
@@ -230,7 +231,8 @@ export async function POST(request: NextRequest) {
     const streamAsset = await pdfServices.getContent({ asset: resultAsset })
     
     // Get the input stream (following Python example: stream_asset.get_input_stream())
-    const excelStream = streamAsset.readStream || streamAsset.getInputStream?.()
+    // StreamAsset should have a readStream property
+    const excelStream = (streamAsset as any).readStream
     
     if (!excelStream) {
       throw new Error('Failed to get content stream from result asset')
@@ -239,19 +241,14 @@ export async function POST(request: NextRequest) {
     // Convert stream to buffer
     const chunks: Buffer[] = []
     
-    // Handle both Readable stream and other stream types
-    if (excelStream && typeof excelStream === 'object' && 'readStream' in excelStream) {
-      // If it's an object with readStream property
-      for await (const chunk of (excelStream as any).readStream) {
-        chunks.push(Buffer.from(chunk))
-      }
-    } else if (excelStream && typeof (excelStream as any)[Symbol.asyncIterator] === 'function') {
-      // If it's an async iterable
+    // Handle Readable stream
+    if (excelStream && typeof (excelStream as any)[Symbol.asyncIterator] === 'function') {
+      // If it's an async iterable (Readable stream)
       for await (const chunk of excelStream as any) {
         chunks.push(Buffer.from(chunk))
       }
     } else {
-      throw new Error('Unable to read content stream')
+      throw new Error('Unable to read content stream: stream is not iterable')
     }
     
     const excelBuffer = Buffer.concat(chunks)

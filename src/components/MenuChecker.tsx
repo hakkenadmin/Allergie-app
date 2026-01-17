@@ -260,8 +260,8 @@ export default function MenuChecker({ storeId }: MenuCheckerProps = {}) {
             {sorted.map(item => {
               const match = matches.find(m => m.menuItem.id === item.id)
               const has = !!match
-              const hasContains = match?.matchedContainsIds.length > 0
-              const hasOnlyShare = match && match.matchedContainsIds.length === 0 && match.matchedShareIds.length > 0
+              const hasContains = (match?.matchedContainsIds?.length ?? 0) > 0
+              const hasOnlyShare = match && (match.matchedContainsIds?.length ?? 0) === 0 && (match.matchedShareIds?.length ?? 0) > 0
               const isExpanded = expandedItems.has(item.id)
               const hasAllergies = (item.allergies_contains?.length > 0 || item.allergies_share?.length > 0)
               return (
