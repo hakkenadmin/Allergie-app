@@ -11,7 +11,7 @@ import AllergySelector from '@/components/AllergySelector'
 import { useAllergies } from '@/hooks/useAllergies'
 
 export default function Home() {
-  const { allergies } = useAllergies()
+  const { allergies, loading: allergiesLoading } = useAllergies()
   const router = useRouter()
   const [stores, setStores] = useState<Store[]>([])
   const [selectedStore, setSelectedStore] = useState<string>('')
@@ -28,11 +28,7 @@ export default function Home() {
   }, [])
 
   const handleCheck = async () => {
-    if (allergies.length === 0) {
-      alert('アレルギーを選択してください')
-      return
-    }
-
+    // Allow navigation even without allergies - the menu page will show a message
     try {
       // Find store ID from selected store name
       let url = '/menu'
@@ -44,7 +40,7 @@ export default function Home() {
       }
       
       // Use router.push with error handling
-      await router.push(url)
+      router.push(url)
     } catch (error) {
       console.error('Navigation error:', error)
       // Fallback: use window.location if router.push fails
@@ -133,11 +129,11 @@ export default function Home() {
               <div className="text-center">
                 <button
                   onClick={handleCheck}
-                  disabled={allergies.length === 0}
+                  disabled={allergiesLoading}
                   className="w-full sm:w-auto px-8 py-4 bg-logo-orange text-white rounded-full font-semibold text-lg shadow-lg hover:bg-orange-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
                   type="button"
                 >
-                  メニューをチェック
+                  {allergiesLoading ? '読み込み中...' : 'メニューをチェック'}
                 </button>
               </div>
             </div>
