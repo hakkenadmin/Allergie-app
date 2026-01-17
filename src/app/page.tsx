@@ -27,23 +27,35 @@ export default function Home() {
     loadStores()
   }, [])
 
-  const handleCheck = () => {
+  const handleCheck = async () => {
     if (allergies.length === 0) {
       alert('アレルギーを選択してください')
       return
     }
 
-    // Find store ID from selected store name
-    if (selectedStore) {
-      const store = stores.find(s => s.store_name === selectedStore)
-      if (store) {
-        router.push(`/menu?storeid=${store.id}`)
-      } else {
-        router.push('/menu')
+    try {
+      // Find store ID from selected store name
+      let url = '/menu'
+      if (selectedStore) {
+        const store = stores.find(s => s.store_name === selectedStore)
+        if (store) {
+          url = `/menu?storeid=${store.id}`
+        }
       }
-    } else {
-      // No store selected - go to menu page showing all stores
-      router.push('/menu')
+      
+      // Use router.push with error handling
+      await router.push(url)
+    } catch (error) {
+      console.error('Navigation error:', error)
+      // Fallback: use window.location if router.push fails
+      let url = '/menu'
+      if (selectedStore) {
+        const store = stores.find(s => s.store_name === selectedStore)
+        if (store) {
+          url = `/menu?storeid=${store.id}`
+        }
+      }
+      window.location.href = url
     }
   }
 
@@ -122,8 +134,8 @@ export default function Home() {
                 <button
                   onClick={handleCheck}
                   disabled={allergies.length === 0}
-                  className="w-full sm:w-auto px-8 py-4 bg-logo-orange text-white rounded-full font-semibold text-lg shadow-lg hover:bg-orange-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                  className="w-full sm:w-auto px-8 py-4 bg-logo-orange text-white rounded-full font-semibold text-lg shadow-lg hover:bg-orange-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
+                  type="button"
                 >
                   メニューをチェック
                 </button>

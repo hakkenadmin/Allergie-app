@@ -20,6 +20,9 @@ export default function MenuChecker({ storeId }: MenuCheckerProps = {}) {
   const [selectedStore, setSelectedStore] = useState<string>('all')
   const [selectedStoreInfo, setSelectedStoreInfo] = useState<Store | null>(null)
   const [matches, setMatches] = useState<MenuItemMatch[]>([])
+  const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set())
+  const [searchText, setSearchText] = useState<string>('')
+  const [selectedCategory, setSelectedCategory] = useState<string>('all')
 
   useEffect(() => {
     loadData()
@@ -93,23 +96,67 @@ export default function MenuChecker({ storeId }: MenuCheckerProps = {}) {
     })
   }
 
+  // Toggle expanded state for a menu item
+  const toggleItemDetails = (itemId: number) => {
+    setExpandedItems(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId)
+      } else {
+        newSet.add(itemId)
+      }
+      return newSet
+    })
+  }
+
   if (loading) {
     return <div className="bg-white rounded-none sm:rounded-lg shadow-md p-6">メニュー項目を読み込み中...</div>
   }
 
   const filtered = selectedStore === 'all' ? menuItems : menuItems.filter(i => i.store_name === selectedStore)
+  
+  // Get unique categories from filtered items
+  const categories = ['all', ...new Set(filtered.map(item => item.category).filter(Boolean) as string[])].sort()
+  
+  // Apply search and category filters
+  const searchAndCategoryFiltered = filtered.filter(item => {
+    // Search filter
+    const matchesSearch = searchText === '' || 
+      item.menu_name.toLowerCase().includes(searchText.toLowerCase()) ||
+      (item.description && item.description.toLowerCase().includes(searchText.toLowerCase()))
+    
+    // Category filter
+    const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory
+    
+    return matchesSearch && matchesCategory
+  })
+  
   const matchedIds = new Set(matches.map(m => m.menuItem.id))
   
-  // Calculate matching percentage
-  const totalItems = filtered.length
-  const matchedItems = matches.length
-  const usableItems = totalItems - matchedItems
-  const matchingPercentage = totalItems > 0 ? Math.round((usableItems / totalItems) * 100) : 0
+  // Calculate matching percentage (based on store-filtered items only, not search/category filters)
+  const totalItemsForPercentage = filtered.length
+  const matchedItemsForPercentage = matches.filter(m => filtered.some(f => f.id === m.menuItem.id)).length
+  const usableItemsForPercentage = totalItemsForPercentage - matchedItemsForPercentage
+  const matchingPercentage = totalItemsForPercentage > 0 ? Math.round((usableItemsForPercentage / totalItemsForPercentage) * 100) : 0
   
-  const sorted = [...filtered].sort((a, b) => {
-    const aMatch = matchedIds.has(a.id) ? 0 : 1
-    const bMatch = matchedIds.has(b.id) ? 0 : 1
-    if (aMatch !== bMatch) return aMatch - bMatch
+  const sorted = [...searchAndCategoryFiltered].sort((a, b) => {
+    const aMatch = matches.find(m => m.menuItem.id === a.id)
+    const bMatch = matches.find(m => m.menuItem.id === b.id)
+    
+    // Get priority: 0 = contains, 1 = shares only, 2 = none
+    const getPriority = (match: MenuItemMatch | undefined) => {
+      if (!match) return 2 // none
+      if (match.matchedContainsIds.length > 0) return 0 // contains
+      if (match.matchedShareIds.length > 0) return 1 // shares only
+      return 2 // none
+    }
+    
+    const aPriority = getPriority(aMatch)
+    const bPriority = getPriority(bMatch)
+    
+    if (aPriority !== bPriority) return aPriority - bPriority
+    
+    // If same priority, sort by store name, then menu name
     const storeCompare = (a.store_name || '').localeCompare(b.store_name || '')
     if (storeCompare !== 0) return storeCompare
     return (a.menu_name || '').localeCompare(b.menu_name || '')
@@ -143,13 +190,13 @@ export default function MenuChecker({ storeId }: MenuCheckerProps = {}) {
         )}
 
         {/* Matching Percentage Display */}
-        {selectedStore !== 'all' && totalItems > 0 && allergies.length > 0 && (
+        {selectedStore !== 'all' && totalItemsForPercentage > 0 && allergies.length > 0 && (
           <div className="mb-4 p-4 mb:p-0 bg-gradient-to-r from-logo-green/10 to-logo-orange/10 border border-logo-green/20 rounded">
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="text-sm font-semibold text-gray-900 mb-1">利用可能なメニュー</h4>
                 <p className="text-xs text-gray-600">
-                  {usableItems} / {totalItems} メニュー項目
+                  {usableItemsForPercentage} / {totalItemsForPercentage} メニュー項目
                 </p>
               </div>
               <div className="text-right">
@@ -183,14 +230,40 @@ export default function MenuChecker({ storeId }: MenuCheckerProps = {}) {
       </div>
 
       <div className="bg-white rounded shadow-md p-4 sm:p-6">
-        <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">メニュー項目 ({filtered.length})</h3>
-        {filtered.length === 0 ? <p className="text-gray-500">メニュー項目が見つかりませんでした。</p> : (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-3">
+          <h3 className="text-lg sm:text-xl font-semibold">メニュー項目 ({searchAndCategoryFiltered.length})</h3>
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            {/* Search input */}
+            <input
+              type="text"
+              placeholder="メニュー名で検索..."
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-none sm:rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-logo-orange focus:border-transparent"
+            />
+            {/* Category filter */}
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-none sm:rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-logo-orange focus:border-transparent"
+            >
+              {categories.map(cat => (
+                <option key={cat} value={cat}>
+                  {cat === 'all' ? 'すべてのカテゴリー' : cat}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        {searchAndCategoryFiltered.length === 0 ? <p className="text-gray-500">メニュー項目が見つかりませんでした。</p> : (
           <div className="space-y-4">
             {sorted.map(item => {
               const match = matches.find(m => m.menuItem.id === item.id)
               const has = !!match
               const hasContains = match?.matchedContainsIds.length > 0
               const hasOnlyShare = match && match.matchedContainsIds.length === 0 && match.matchedShareIds.length > 0
+              const isExpanded = expandedItems.has(item.id)
+              const hasAllergies = (item.allergies_contains?.length > 0 || item.allergies_share?.length > 0)
               return (
                 <div key={item.id} className={`border-2 rounded-none sm:rounded-lg p-4 ${
                   hasContains 
@@ -202,7 +275,17 @@ export default function MenuChecker({ storeId }: MenuCheckerProps = {}) {
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start">
                     {/* Left side: Menu name, description, and match info */}
                     <div className="flex-1 w-full">
-                      <h4 className="font-bold text-lg text-gray-900 mb-1">{item.menu_name}</h4>
+                      <div className="flex items-start justify-between mb-1">
+                        <h4 className="font-bold text-lg text-gray-900 flex-1">{item.menu_name}</h4>
+                        {hasAllergies && (
+                          <button
+                            onClick={() => toggleItemDetails(item.id)}
+                            className="ml-2 px-3 py-1 text-xs sm:text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-none sm:rounded-md transition-colors flex-shrink-0"
+                          >
+                            {isExpanded ? '詳細を隠す' : '詳細を表示'}
+                          </button>
+                        )}
+                      </div>
                       {item.description && <p className="text-sm text-gray-700 mb-2">{item.description}</p>}
                       {has && match && (
                         <div className="mt-2 space-y-2">
@@ -229,7 +312,8 @@ export default function MenuChecker({ storeId }: MenuCheckerProps = {}) {
                             </div>
                           )}
                           {/* Allergy icons below match field on mobile */}
-                          <div className="flex gap-2 mt-2 sm:hidden">
+                          {isExpanded && (
+                            <div className="flex gap-2 mt-2 sm:hidden flex-wrap max-w-[50%]">
                             {(item.allergies_contains?.length > 0 || item.allergies_share?.length > 0) ? (
                               <>
                                 {/* Contains allergies */}
@@ -292,12 +376,13 @@ export default function MenuChecker({ storeId }: MenuCheckerProps = {}) {
                                 <span className="text-xs text-green-600">✓</span>
                               </div>
                             )}
-                          </div>
+                            </div>
+                          )}
                         </div>
                       )}
                       {/* Show allergy icons even when no match on mobile */}
-                      {!has && (item.allergies_contains?.length > 0 || item.allergies_share?.length > 0) && (
-                        <div className="flex gap-2 mt-2 sm:hidden">
+                      {!has && isExpanded && (item.allergies_contains?.length > 0 || item.allergies_share?.length > 0) && (
+                        <div className="flex gap-2 mt-2 sm:hidden flex-wrap max-w-[50%]">
                           {/* Contains allergies */}
                           {item.allergies_contains?.map((allergyId, idx) => {
                             const allergy = COMMON_ALLERGIES.find(a => a.id === allergyId)
@@ -348,7 +433,7 @@ export default function MenuChecker({ storeId }: MenuCheckerProps = {}) {
                           })}
                         </div>
                       )}
-                      {!has && (!item.allergies_contains || item.allergies_contains.length === 0) && (!item.allergies_share || item.allergies_share.length === 0) && (
+                      {!has && isExpanded && (!item.allergies_contains || item.allergies_contains.length === 0) && (!item.allergies_share || item.allergies_share.length === 0) && (
                         <div className="w-10 h-10 rounded-none bg-green-100 border border-green-300 flex items-center justify-center mt-2 sm:hidden">
                           <span className="text-xs text-green-600">✓</span>
                         </div>
@@ -356,9 +441,10 @@ export default function MenuChecker({ storeId }: MenuCheckerProps = {}) {
                     </div>
                     
                     {/* Right side: Allergy items - Hidden on mobile */}
-                    <div className="hidden sm:flex sm:flex-col sm:items-start sm:ml-4">
-                      <div>
-                        <div className="flex gap-2">
+                    {isExpanded && (
+                      <div className="hidden sm:flex sm:flex-col sm:items-start sm:ml-4 sm:max-w-[50%] sm:flex-shrink-0">
+                        <div className="w-full">
+                          <div className="flex gap-2 flex-wrap">
                           {(item.allergies_contains?.length > 0 || item.allergies_share?.length > 0) ? (
                             <>
                               {/* Contains allergies */}
@@ -421,9 +507,10 @@ export default function MenuChecker({ storeId }: MenuCheckerProps = {}) {
                               <span className="text-xs text-green-600">✓</span>
                             </div>
                           )}
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               )

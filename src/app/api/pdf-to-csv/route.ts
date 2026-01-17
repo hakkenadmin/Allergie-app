@@ -11,6 +11,105 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
+/**
+ * Detects if the PDF contains table structures suitable for menu/allergy data extraction
+ * Returns true if tables are detected, false otherwise
+ */
+async function detectTableStructure(fileId: string): Promise<boolean> {
+  try {
+    // Create a simple assistant for table detection
+    const detectionAssistant = await openai.beta.assistants.create({
+      name: 'PDF Table Structure Detector',
+      instructions: `You are a PDF analyzer that checks if a PDF contains table structures suitable for menu and allergy data extraction.
+
+Your task:
+1. Analyze the PDF to determine if it contains table structures
+2. Look for:
+   - Tables with rows and columns
+   - Menu items organized in rows
+   - Allergy information in columns (with symbols like ●, ○, ▲, ×, or -)
+   - Column headers indicating allergies (e.g., えび, 小麦, 卵, etc.)
+   - Multiple menu items listed in a structured table format
+
+3. Respond with ONLY "YES" if tables are detected, or "NO" if no table structure is found
+4. If the PDF only contains text, images without tables, or unstructured content, respond "NO"
+5. If the PDF contains structured tables with menu items and allergy columns, respond "YES"
+
+IMPORTANT: Only respond with "YES" or "NO" - no other text or explanation.`,
+      model: 'gpt-4o',
+      tools: [{ type: 'file_search' }],
+      temperature: 0.1,
+    })
+
+    // Create a thread with the PDF file
+    const thread = await openai.beta.threads.create({
+      messages: [
+        {
+          role: 'user',
+          content: 'このPDFにメニューとアレルギー情報を含むテーブル構造が含まれているか確認してください。テーブル構造があれば「YES」、なければ「NO」とだけ回答してください。',
+          attachments: [
+            {
+              file_id: fileId,
+              tools: [{ type: 'file_search' }],
+            },
+          ],
+        },
+      ],
+    })
+
+    // Run the assistant
+    const run = await openai.beta.threads.runs.create(thread.id, {
+      assistant_id: detectionAssistant.id,
+    })
+
+    // Poll for completion (shorter timeout for detection)
+    let runStatus = run
+    let attempts = 0
+    const maxAttempts = 30 // 1 minute timeout for detection
+
+    while (runStatus.status === 'queued' || runStatus.status === 'in_progress') {
+      if (attempts >= maxAttempts) {
+        console.warn('Table detection timed out, assuming tables exist')
+        await openai.beta.assistants.delete(detectionAssistant.id).catch(() => {})
+        return true // Default to true to allow processing if detection times out
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+      runStatus = await openai.beta.threads.runs.retrieve(run.id, { thread_id: thread.id })
+      attempts++
+    }
+
+    // Clean up detection assistant
+    await openai.beta.assistants.delete(detectionAssistant.id).catch(() => {})
+
+    if (runStatus.status === 'completed') {
+      // Get the response
+      const messages = await openai.beta.threads.messages.list(thread.id)
+      
+      for (const message of messages.data) {
+        if (message.role === 'assistant' && message.content) {
+          for (const content of message.content) {
+            if (content.type === 'text') {
+              const response = content.text.value.trim().toUpperCase()
+              const hasTables = response.includes('YES') && !response.includes('NO')
+              console.log(`Table detection result: ${hasTables ? 'YES' : 'NO'}`)
+              return hasTables
+            }
+          }
+        }
+      }
+    }
+
+    // If detection fails, default to true to allow processing
+    console.warn('Table detection failed, assuming tables exist')
+    return true
+  } catch (error) {
+    console.error('Error detecting table structure:', error)
+    // If detection fails, default to true to allow processing (fail open)
+    return true
+  }
+}
+
 export async function POST(request: NextRequest) {
   let uploadedFile: any = null
   let assistant: any = null
@@ -52,23 +151,39 @@ export async function POST(request: NextRequest) {
     
     console.log(`PDF has ${pageCount} pages`)
     
-    // If PDF has more than 2 pages, split and process page by page
-    if (pageCount > 2) {
-      console.log(`PDF has ${pageCount} pages (>2), processing page by page...`)
-      return await processPdfPageByPage(pdfBytes, file.name, pageCount)
-    }
-    
     // For PDFs with 2 or fewer pages, process normally
     const fileBlob = new Blob([fileBuffer], { type: 'application/pdf' })
     const openaiFile = new File([fileBlob], file.name, { type: 'application/pdf' })
 
-    // Upload file to OpenAI
+    // Upload file to OpenAI for table detection
     uploadedFile = await openai.files.create({
       file: openaiFile,
       purpose: 'assistants',
     })
 
     console.log('File uploaded:', uploadedFile.id)
+
+    // Check if PDF contains table structure before processing
+    const hasTableStructure = await detectTableStructure(uploadedFile.id)
+    
+    if (!hasTableStructure) {
+      // Clean up uploaded file
+      await openai.files.delete(uploadedFile.id).catch(() => {})
+      return NextResponse.json(
+        { error: 'このPDFにはテーブル構造が含まれていません。メニューとアレルギー情報が表形式で整理されたPDFをアップロードしてください。' },
+        { status: 400 }
+      )
+    }
+
+    console.log('Table structure detected, proceeding with conversion...')
+    
+    // If PDF has more than 2 pages, split and process page by page
+    if (pageCount > 2) {
+      console.log(`PDF has ${pageCount} pages (>2), processing page by page...`)
+      // Clean up the uploaded file since processPdfPageByPage will create its own file uploads
+      await openai.files.delete(uploadedFile.id).catch(() => {})
+      return await processPdfPageByPage(pdfBytes, file.name, pageCount)
+    }
 
     // Create an assistant with file_search tool - allows direct PDF reading without OCR
     assistant = await openai.beta.assistants.create({

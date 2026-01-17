@@ -17,6 +17,7 @@ export default function PdfToCsvUploader({ store, onClose, onUploadComplete }: P
   const [error, setError] = useState<string | null>(null)
   const [generatedCsv, setGeneratedCsv] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
+  const [processingMethod, setProcessingMethod] = useState<'ai' | null>(null)
 
   // Debug: Log state changes
   useEffect(() => {
@@ -47,6 +48,7 @@ export default function PdfToCsvUploader({ store, onClose, onUploadComplete }: P
     if (!pdfFile) return
 
     setProcessing(true)
+    setProcessingMethod('ai')
     setError(null)
     setProgress(0)
 
@@ -173,16 +175,18 @@ export default function PdfToCsvUploader({ store, onClose, onUploadComplete }: P
     }
   }
 
-  const handleConfirm = () => {
-    // CSV data will be passed to CsvUploader via initialCsvData prop
-    // The CsvUploader component will handle the rest
-  }
 
   const handleReset = () => {
     setPdfFile(null)
     setGeneratedCsv(null)
     setError(null)
     setProgress(0)
+    setProcessingMethod(null)
+  }
+
+  const handleConfirm = () => {
+    // CSV data will be passed to CsvUploader via initialCsvData prop
+    // The CsvUploader component will handle the rest
   }
 
   // If CSV is generated, show it in CsvReviewer first, then CsvUploader
@@ -293,7 +297,7 @@ export default function PdfToCsvUploader({ store, onClose, onUploadComplete }: P
         {/* Error Message */}
         {error && (
           <div className="p-3 bg-red-50 border border-red-200 rounded">
-            <p className="text-sm text-red-700">{error}</p>
+            <p className="text-sm text-red-700 whitespace-pre-line">{error}</p>
           </div>
         )}
 
@@ -301,12 +305,14 @@ export default function PdfToCsvUploader({ store, onClose, onUploadComplete }: P
         {processing && (
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">AIがPDFを処理中...</span>
+              <span className="text-sm text-gray-600">
+                AIがPDFを処理中...
+              </span>
               <span className="text-sm font-medium text-gray-900">{progress}%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div
-                className="bg-logo-orange h-2 rounded-full transition-all duration-300"
+                className="h-2 rounded-full transition-all duration-300 bg-logo-orange"
                 style={{ width: `${progress}%` }}
               ></div>
             </div>
@@ -320,21 +326,19 @@ export default function PdfToCsvUploader({ store, onClose, onUploadComplete }: P
         <div className="p-3 bg-blue-50 rounded text-xs text-gray-600">
           <p className="font-semibold mb-1 text-blue-900">PDFからCSVへの変換について:</p>
           <ul className="list-disc list-inside space-y-1">
-            <li>AIがPDFを読み取り、メニュー情報を自動抽出します</li>
             <li>生成されたCSVはプレビューで確認できます</li>
             <li>確認後、既存のCSVインポーターで保存できます</li>
-            <li>処理には数秒から数分かかる場合があります</li>
           </ul>
         </div>
 
         {/* Process Button */}
-        <div className="flex gap-3">
+        <div className="flex gap-3 flex-wrap">
           <button
             onClick={handleProcessPdf}
             disabled={!pdfFile || processing}
-            className="px-4 py-2 bg-logo-orange text-white rounded hover:bg-orange-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+            className="flex-1 min-w-[200px] px-4 py-2 bg-logo-orange text-white rounded hover:bg-orange-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed font-medium"
           >
-            {processing ? '処理中...' : 'PDFを処理してCSVを生成'}
+            {processing ? 'AI処理中...' : 'AIで変換'}
           </button>
           {pdfFile && !processing && (
             <button
