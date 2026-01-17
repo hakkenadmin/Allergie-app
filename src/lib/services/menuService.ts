@@ -144,5 +144,20 @@ export const matchMenuItems = (menuItems: MenuItem[], userAllergies: Allergy[]):
   return matches
 }
 
+export const deleteAllMenuItemsByStore = async (storeName: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('menu_items')
+      .delete()
+      .eq('store_name', storeName)
+    
+    if (error) throw error
+    return true
+  } catch (err) {
+    console.error('deleteAllMenuItemsByStore error', err)
+    throw err
+  }
+}
+
 
 

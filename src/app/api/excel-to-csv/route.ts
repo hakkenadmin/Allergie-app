@@ -104,7 +104,8 @@ function convertToCsvFormat(rows2d: any[][]): string[] {
   const allergyNameToId = new Map<string, number>()
   COMMON_ALLERGIES.forEach((a) => allergyNameToId.set(a.ja, a.id))
 
-  // Walnut は COMMON_ALLERGIES に無い想定でも拾えるようにする（IDが無ければ "くるみ" を出す）
+  // Note: くるみ (Walnut) is now in COMMON_ALLERGIES with ID 24, so the special handling below is no longer needed
+  // but kept for backward compatibility
   const WALNUT_JA = 'くるみ'
 
   // 文字正規化（改行・空白・全角スペース・タブなど除去）
@@ -137,15 +138,14 @@ function convertToCsvFormat(rows2d: any[][]): string[] {
 
   // Excelヘッダの揺れ対応（乳成分→乳、など）
   const allergenHeaderAliases: Record<string, string[]> = {
-    '卵': ['卵'],
-    '乳': ['乳', '乳成分'],
-    '小麦': ['小麦'],
     'えび': ['えび'],
     'かに': ['かに'],
+    '小麦': ['小麦'],
     'そば': ['そば'],
+    '卵': ['卵'],
+    '乳': ['乳', '乳成分'],
     '落花生': ['落花生'],
-    'くるみ': ['くるみ'],
-    'アーモンド': ['アーモンド', 'アーモンド', 'アーモンド'], // 改行は norm で消えるのでOK
+    'アーモンド': ['アーモンド'],
     'あわび': ['あわび'],
     'いか': ['いか'],
     'いくら': ['いくら'],
@@ -160,6 +160,8 @@ function convertToCsvFormat(rows2d: any[][]): string[] {
     '鶏肉': ['鶏肉'],
     'バナナ': ['バナナ'],
     '豚肉': ['豚肉'],
+    'マカダミアンナッツ': ['マカダミアンナッツ'],
+    'くるみ': ['くるみ'],
     'もも': ['もも'],
     'やまいも': ['やまいも'],
     'りんご': ['りんご'],
@@ -205,22 +207,8 @@ function convertToCsvFormat(rows2d: any[][]): string[] {
       }
     }
 
-    // Walnut が COMMON_ALLERGIES に無い場合でも「くるみ」として拾う（列がある時だけ）
-    if (allergenCol.has(WALNUT_JA)) {
-      const idx = allergenCol.get(WALNUT_JA)!
-      const cell = norm(row[idx])
-      if (cell.includes('●')) {
-        const id = allergyNameToId.get(WALNUT_JA)
-        if (!containsIds.includes(id ? String(id) : WALNUT_JA)) {
-          containsIds.push(id ? String(id) : WALNUT_JA)
-        }
-      } else if (cell.includes('○')) {
-        const id = allergyNameToId.get(WALNUT_JA)
-        if (!sharesIds.includes(id ? String(id) : WALNUT_JA)) {
-          sharesIds.push(id ? String(id) : WALNUT_JA)
-        }
-      }
-    }
+    // Note: くるみ (Walnut) is now in COMMON_ALLERGIES with ID 24, so it's processed in the main loop above
+    // This special handling is kept for backward compatibility but should not be needed anymore
 
     const csvRow = [
       escapeCsvField(menuName), // メニュー名

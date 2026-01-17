@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { useAuth } from '@/contexts/AuthContext'
-import { getAllStores } from '@/lib/services/menuService'
+import { getAllStores, deleteAllMenuItemsByStore } from '@/lib/services/menuService'
 import { userRoleService } from '@/lib/services/userRoleService'
 import { supabase } from '@/lib/supabase/client'
 import MenuTable from '@/components/admin/MenuTable'
@@ -43,6 +43,8 @@ export default function AdminPage() {
   const [showStoreSelector, setShowStoreSelector] = useState(false)
   const [uploadType, setUploadType] = useState<'csv' | 'pdf' | null>(null)
   const [menuTableRefreshKey, setMenuTableRefreshKey] = useState(0)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   // Check if user is admin
   useEffect(() => {
@@ -207,6 +209,24 @@ export default function AdminPage() {
     await loadStores(false)
     // Force MenuTable to refresh by updating refreshKey
     setMenuTableRefreshKey(prev => prev + 1)
+  }
+
+  const handleDeleteAllMenuItems = async () => {
+    if (!selectedStore) return
+
+    setDeleting(true)
+    try {
+      await deleteAllMenuItemsByStore(selectedStore.store_name)
+      alert(`${selectedStore.store_name}のすべてのメニュー項目を削除しました。`)
+      // Force MenuTable to refresh
+      setMenuTableRefreshKey(prev => prev + 1)
+      setShowDeleteConfirm(false)
+    } catch (err: any) {
+      console.error('Error deleting menu items:', err)
+      alert(`メニュー項目の削除に失敗しました: ${err?.message || 'Unknown error'}`)
+    } finally {
+      setDeleting(false)
+    }
   }
 
   const handleOpenStoreCsvUploader = () => {
@@ -741,19 +761,38 @@ export default function AdminPage() {
 
               {/* Menu Items Table - Show when store is selected */}
               {selectedStore && (
-                <MenuTable 
-                  store={selectedStore} 
-                  onClose={() => setSelectedStore(null)}
-                  refreshKey={menuTableRefreshKey}
-                  onCsvUpload={() => {
-                    setCsvUploadStore(selectedStore)
-                    setShowCsvUploader(true)
-                  }}
-                  onPdfUpload={() => {
-                    setCsvUploadStore(selectedStore)
-                    setShowPdfUploader(true)
-                  }}
-                />
+                <>
+                  <div className="bg-white rounded-lg shadow-md p-4 mb-4">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-lg font-semibold text-gray-900">
+                        {selectedStore.store_name} - メニュー項目
+                      </h2>
+                      <button
+                        onClick={() => setShowDeleteConfirm(true)}
+                        disabled={deleting}
+                        className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        <span>すべてのメニューを削除</span>
+                      </button>
+                    </div>
+                  </div>
+                  <MenuTable 
+                    store={selectedStore} 
+                    onClose={() => setSelectedStore(null)}
+                    refreshKey={menuTableRefreshKey}
+                    onCsvUpload={() => {
+                      setCsvUploadStore(selectedStore)
+                      setShowCsvUploader(true)
+                    }}
+                    onPdfUpload={() => {
+                      setCsvUploadStore(selectedStore)
+                      setShowPdfUploader(true)
+                    }}
+                  />
+                </>
               )}
             </div>
           )}
@@ -843,6 +882,43 @@ export default function AdminPage() {
                 setShowStoreCsvUploader(false)
               }}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Delete All Menu Items Confirmation Modal */}
+      {showDeleteConfirm && selectedStore && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">確認</h2>
+            <p className="text-sm text-gray-600 mb-6">
+              {selectedStore.store_name}のすべてのメニュー項目を削除しますか？
+              <br />
+              <span className="font-semibold text-red-600">この操作は取り消せません。</span>
+            </p>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleting}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleDeleteAllMenuItems}
+                disabled={deleting}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {deleting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>削除中...</span>
+                  </>
+                ) : (
+                  <span>削除</span>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

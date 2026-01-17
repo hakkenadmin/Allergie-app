@@ -222,7 +222,7 @@ Step 3: For EACH menu item:
      - Identify ALL allergy columns in the table header row FIRST - count them to know how many to check
      - Check ALL allergy columns from left to right, continuing until you reach the ABSOLUTE END of the row
      - For EACH allergy column in the row (from first to last):
-       * Read the column header to identify the allergy name (e.g., えび, 小麦, 卵, アーモンド, あわび, いか, いくら, オレンジ, キウイフルーツ, 牛肉, ごま, さけ, さば, 大豆, 鶏肉, バナナ, 豚肉, まつたけ, もも, やまいも)
+       * Read the column header to identify the allergy name (e.g., えび, 小麦, 卵, アーモンド, あわび, いか, いくら, オレンジ, キウイフルーツ, 牛肉, ごま, さけ, さば, 大豆, 鶏肉, バナナ, 豚肉, マカダミアンナッツ, くるみ, もも, やまいも)
        * Check the symbol in that column for this menu item row:
          - ● (black/filled circle) → add Japanese allergy name to 含有アレルギー
          - ○ (white/empty circle) → add Japanese allergy name to 共有アレルギー
@@ -233,7 +233,7 @@ Step 3: For EACH menu item:
      - CRITICAL: You MUST check EVERY allergy column from start to end of the row - do not skip any
      - CRITICAL: Extract ALL allergies marked with ●, ○, or ▲ - include every single one until the end
      - CRITICAL: If a menu item has 20+ allergies marked, include all 20+, not just the first few
-     - CRITICAL: Some allergy columns may be at the far right end (やまいも, もも, まつたけ, etc.) - make sure you read that far
+     - CRITICAL: Some allergy columns may be at the far right end (やまいも, もも, くるみ, マカダミアンナッツ, etc.) - make sure you read that far
      - CRITICAL: After reading a row, verify you checked ALL columns by comparing to the header row
   f. Extract note if present (or leave empty)
   g. Set 公開 to "true"
@@ -257,7 +257,7 @@ Extract the Japanese allergy names directly from the PDF column headers or text.
 Common allergy names you may find:
 えび, かに, 小麦, そば, 卵, 乳, 落花生, アーモンド, あわび, いか,
 いくら, オレンジ, カシューナッツ, キウイフルーツ, 牛肉, ごま, さけ,
-さば, 大豆, 鶏肉, バナナ, 豚肉, まつたけ, もも, やまいも,
+さば, 大豆, 鶏肉, バナナ, 豚肉, マカダミアンナッツ, くるみ, もも, やまいも,
 りんご, ゼラチン
 
 IMPORTANT:
@@ -282,7 +282,7 @@ CRITICAL: Some PDFs use ▲ (triangle) instead of ○ for shared allergies - tre
 When extracting allergies for each menu item, you MUST:
 1. FIRST: Count ALL allergy columns in the header row - tables often have 25+, 28+ columns (e.g., McDonald's has 28 columns)
 2. Read the ENTIRE row from FIRST column to LAST column - do not stop reading mid-row
-3. Identify ALL allergy columns in the table header FIRST - note the LAST column name (e.g., やまいも, もも, まつたけ)
+3. Identify ALL allergy columns in the table header FIRST - note the LAST column name (e.g., やまいも, もも, くるみ, マカダミアンナッツ)
 4. For EACH menu item row, check EVERY allergy column systematically from left to right
 5. Continue reading the row until you reach the ABSOLUTE END - verify you reached the LAST column from the header
 6. Extract ALL allergies marked with ● - do not skip any, include every single one until the end
@@ -296,7 +296,7 @@ When extracting allergies for each menu item, you MUST:
 14. CRITICAL: Do NOT stop extracting after a certain number - continue until you reach the ABSOLUTE END of the row
 15. VERIFICATION: Compare the number of columns you checked with the header row - they must match
 
-EXAMPLE: If a menu item row has allergies marked in columns: えび(●), 小麦(●), 卵(●), かに(○), 乳(○), そば(●), 落花生(●), アーモンド(○), あわび(●), いか(●), いくら(○), オレンジ(●), カシューナッツ(○), キウイフルーツ(●), 牛肉(○), ごま(●), さけ(○), さば(●), 大豆(○), 鶏肉(●), バナナ(○), 豚肉(●), まつたけ(○), もも(●), やまいも(○)
+EXAMPLE: If a menu item row has allergies marked in columns: えび(●), 小麦(●), 卵(●), かに(○), 乳(○), そば(●), 落花生(●), アーモンド(○), あわび(●), いか(●), いくら(○), オレンジ(●), カシューナッツ(○), キウイフルーツ(●), 牛肉(○), ごま(●), さけ(○), さば(●), 大豆(○), 鶏肉(●), バナナ(○), 豚肉(●), マカダミアンナッツ(○), くるみ(●), もも(●), やまいも(○)
 Your output MUST include ALL 25 allergies: Extract ALL ● symbols to 含有アレルギー and ALL ○/▲ symbols to 共有アレルギー
 Do NOT output only the first 5 or 10 - that's incomplete! You must read the ENTIRE row until the end and extract ALL allergies.
 CRITICAL: Do NOT stop at アーモンド (column 9) - continue reading until やまいも (the LAST column)!
@@ -739,7 +739,7 @@ Step 3: For EACH menu item on this page:
      - Identify ALL allergy columns in the table header row FIRST - count them to know how many to check
      - Check ALL allergy columns from left to right, continuing until you reach the ABSOLUTE END of the row
      - For EACH allergy column in the row (from first to last):
-       * Read the column header to identify the allergy name (e.g., えび, 小麦, 卵, アーモンド, あわび, いか, いくら, オレンジ, キウイフルーツ, 牛肉, ごま, さけ, さば, 大豆, 鶏肉, バナナ, 豚肉, まつたけ, もも, やまいも)
+       * Read the column header to identify the allergy name (e.g., えび, 小麦, 卵, アーモンド, あわび, いか, いくら, オレンジ, キウイフルーツ, 牛肉, ごま, さけ, さば, 大豆, 鶏肉, バナナ, 豚肉, マカダミアンナッツ, くるみ, もも, やまいも)
        * Check the symbol in that column for this menu item row:
          - ● (black/filled circle) → add Japanese allergy name to 含有アレルギー
          - ○ (white/empty circle) → add Japanese allergy name to 共有アレルギー
@@ -750,7 +750,7 @@ Step 3: For EACH menu item on this page:
      - CRITICAL: You MUST check EVERY allergy column from start to end of the row - do not skip any
      - CRITICAL: Extract ALL allergies marked with ●, ○, or ▲ - include every single one until the end
      - CRITICAL: If a menu item has 20+ allergies marked, include all 20+, not just the first few
-     - CRITICAL: Some allergy columns may be at the far right end (やまいも, もも, まつたけ, etc.) - make sure you read that far
+     - CRITICAL: Some allergy columns may be at the far right end (やまいも, もも, くるみ, マカダミアンナッツ, etc.) - make sure you read that far
      - CRITICAL: After reading a row, verify you checked ALL columns by comparing to the header row
   f. Extract note if present (or leave empty)
   g. Set 公開 to "true"
@@ -772,7 +772,7 @@ Extract the Japanese allergy names directly from the PDF column headers or text.
 Common allergy names you may find:
 えび, かに, 小麦, そば, 卵, 乳, 落花生, アーモンド, あわび, いか,
 いくら, オレンジ, カシューナッツ, キウイフルーツ, 牛肉, ごま, さけ,
-さば, 大豆, 鶏肉, バナナ, 豚肉, まつたけ, もも, やまいも,
+さば, 大豆, 鶏肉, バナナ, 豚肉, マカダミアンナッツ, くるみ, もも, やまいも,
 りんご, ゼラチン
 
 IMPORTANT:
@@ -797,7 +797,7 @@ CRITICAL: Some PDFs use ▲ (triangle) instead of ○ for shared allergies - tre
 When extracting allergies for each menu item, you MUST:
 1. FIRST: Count ALL allergy columns in the header row - tables often have 25+, 28+ columns (e.g., McDonald's has 28 columns)
 2. Read the ENTIRE row from FIRST column to LAST column - do not stop reading mid-row
-3. Identify ALL allergy columns in the table header FIRST - note the LAST column name (e.g., やまいも, もも, まつたけ)
+3. Identify ALL allergy columns in the table header FIRST - note the LAST column name (e.g., やまいも, もも, くるみ, マカダミアンナッツ)
 4. For EACH menu item row, check EVERY allergy column systematically from left to right
 5. Continue reading the row until you reach the ABSOLUTE END - verify you reached the LAST column from the header
 6. Extract ALL allergies marked with ● - do not skip any, include every single one until the end
@@ -811,7 +811,7 @@ When extracting allergies for each menu item, you MUST:
 14. CRITICAL: Do NOT stop extracting after a certain number - continue until you reach the ABSOLUTE END of the row
 15. VERIFICATION: Compare the number of columns you checked with the header row - they must match
 
-EXAMPLE: If a menu item row has allergies marked in columns: えび(●), 小麦(●), 卵(●), かに(○), 乳(○), そば(●), 落花生(●), アーモンド(○), あわび(●), いか(●), いくら(○), オレンジ(●), カシューナッツ(○), キウイフルーツ(●), 牛肉(○), ごま(●), さけ(○), さば(●), 大豆(○), 鶏肉(●), バナナ(○), 豚肉(●), まつたけ(○), もも(●), やまいも(○)
+EXAMPLE: If a menu item row has allergies marked in columns: えび(●), 小麦(●), 卵(●), かに(○), 乳(○), そば(●), 落花生(●), アーモンド(○), あわび(●), いか(●), いくら(○), オレンジ(●), カシューナッツ(○), キウイフルーツ(●), 牛肉(○), ごま(●), さけ(○), さば(●), 大豆(○), 鶏肉(●), バナナ(○), 豚肉(●), マカダミアンナッツ(○), くるみ(●), もも(●), やまいも(○)
 Your output MUST include ALL 25 allergies: Extract ALL ● symbols to 含有アレルギー and ALL ○/▲ symbols to 共有アレルギー
 Do NOT output only the first 5 or 10 - that's incomplete! You must read the ENTIRE row until the end and extract ALL allergies.
 CRITICAL: Do NOT stop at アーモンド (column 9) - continue reading until やまいも (the LAST column)!
