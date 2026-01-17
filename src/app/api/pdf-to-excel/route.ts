@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
       mimeType: MimeType.PDF,
     })
 
-    console.log('PDF uploaded to Adobe PDF Services:', inputAsset.assetID)
+    console.log('PDF uploaded to Adobe PDF Services')
 
     // Create export parameters for Excel format
     const params = new ExportPDFParams({
